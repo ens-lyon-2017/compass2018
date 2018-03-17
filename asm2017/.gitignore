@@ -1,0 +1,22 @@
+# Emulator/Debugger build files and binary output
+emu/build/***
+emu/emu
+
+***/__pycache__/*
+***/__pycache__
+
+# Compiled programs
+prog/*.bin
+prog/*.obj
+prog/*.debug
+
+# Font converter executable
+prog/font-convert
+
+# Object and binary files from the subject simu.src
+subject/simu.src/*.o
+subject/simu
+
+# Chip8 compiled programs and examples games
+chip8/*.bin
+chip8/*.obj
