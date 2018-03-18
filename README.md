@@ -11,7 +11,7 @@ c'est du sabotage/de l'exploitation
 * des stats
 * un article
 
-##asm2017
+## asm2017
 
 L'assembleur de Sébastien et Alain, si vous souhaitez l'utiliser
 
