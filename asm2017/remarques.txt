@@ -130,7 +130,7 @@ C'est restrictif pour pas mal de raisons :
 Le fait que les compteurs ne soient pas des registres oblige à les récupérer
 chaque fois qu'on veut faire des calculs pour les renvoyer à la mémoire
 ensuite. Par ailleurs, PC n'est utilisé que dans deux cas : pour connaître
-l'adresse de données introduites par un .const (voir font_lea à la fin de
+l'adresse de données introduites par un .const (voir font\_lea à la fin de
 prog/lib_font.s) et pour effectuer un saut absolu avec setctr. Le deuxième
 usage disparaîtrait facilement si on utilisait des registres pour adresser.
 
