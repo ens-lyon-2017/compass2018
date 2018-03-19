@@ -6,17 +6,27 @@ emu/emu
 ***/__pycache__
 
 # Compiled programs
-prog/*.bin
-prog/*.obj
-prog/*.debug
+asm2017/prog/*.bin
+asm2017/prog/*.obj
+asm2017/prog/*.debug
 
 # Font converter executable
-prog/font-convert
+asm2017/prog/font-convert
 
 # Object and binary files from the subject simu.src
-subject/simu.src/*.o
-subject/simu
+asm2017/subject/simu.src/*.o
+asm2017subject/simu
 
 # Chip8 compiled programs and examples games
-chip8/*.bin
-chip8/*.obj
+asm2017/chip8/*.bin
+asm2017/chip8/*.obj
+
+# emulator
+asm2017/emu/build/
+asm2017/emu/emu
+
+#Latex
+*.aux
+*.log
+*.bbl
+*.pdf
