@@ -1,0 +1,62 @@
+%===========================================================
+%                              Choix de track
+%===========================================================
+% Une des trois options 'parallelisme', 'architecture', 'systeme' 
+% doit être utilisée avec le style compas2018
+\documentclass[architecture]{compas2018}
+
+%===========================================================
+%                               Title
+%===========================================================
+
+\toappear{1} % Conserver cette ligne pour la version finale
+
+\begin{document}
+
+\title{}
+\shorttitle{Un jeu d'instructions minimisant les échanges entre
+  la mémoire et le processeur}
+
+\author{Florent de Dinechin}%
+
+\address{École Normale Supérieure de Lyon,\\
+ - 46 allée d'Italie\\
+69008 - France\\
+Vincent.Danjean@imag.fr}
+
+\date{\today}
+
+\maketitle
+
+%===========================================================         %
+%R\'esum\'e
+%===========================================================  
+\begin{abstract}
+  La plupart des processeurs modernes communiquent avec la mémoire par bus (généralement 16/32/64 bits de data in/data out). Il y a donc à chaque cycle des bits inutiles expédiés. Est-ce nécessaire ?
+On propose ici une architecture visant à minimiser le nombre de bits échangés entre le processeur et la mémoire, avec un seul signal de données entre le processeur et la mémoire. Cela nous permet d'avoir des instructions de taille arbitraire, et donc un encodage optimal des instructions en fonction de leur fréquence via des arbres de Huffmann. Nos expérimentations montrent que l'envoi du code de la mémoire au processeur représente une part importante des données expédiées.
+L'adressage de la mémoire pose cependant problème : stocker les compteurs dans le processeur oblige à envoyer 64 bits à la mémoire à chaque accès, la solution étudiée ici est l'usage de compteurs avec post-incrément dupliqués dans l'interface mémoire et le processeur. On discutera des limites de cet adressage et d'éventuelles solutions pour y remédier. 
+  \MotsCles{jeu d'instructions, minimisation, interface mémoire-processeur}
+\end{abstract}
+
+
+%=========================================================
+\section{Introduction}
+%=========================================================
+
+Comment concevoir une ISA permettant 
+
+%=========================================================
+\section{Benchmark}
+%=========================================================
+
+\subsection{Trois composants essentiels}
+
+\subsection{Un résultat époustouflant}
+
+%=========================================================
+\section{Résultats}
+%=========================================================
+\end{document}
+
+
+
