@@ -11,6 +11,18 @@ c'est du sabotage/de l'exploitation
 * des stats
 * un article
 
+## Notre projet (proposition d'axe de rédaction par Antonin)
+
+ * Multiplication matricielle 
+   1. Exécuter les stats précises sur la multiplication matricielle.
+   2. Dire que c'est un peu pourri
+   3. Estimer le gain avec la proposition de Sébastien segments+pointeurs/registres
+ * Huffmann 
+   1. Faire les stats sur chip8. 
+   2. Changer Huffmann. 
+   3. Refaire les mêmes stats. 
+   4. Comparer
+
 ## asm2017
 
 L'assembleur de Sébastien et Alain, si vous souhaitez l'utiliser
