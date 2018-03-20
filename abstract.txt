@@ -1,3 +1,15 @@
-La plupart des processeurs modernes communiquent avec la mémoire par bus (généralement 16/32/64 bits de data in/data out). Il y a donc à chaque cycle des bits inutiles expédiés. Est-ce nécessaire ?
-On propose ici une architecture visant à minimiser le nombre de bits échangés entre le processeur et la mémoire, avec un seul signal de données entre le processeur et la mémoire. Cela nous permet d'avoir des instructions de taille arbitraire, et donc un encodage optimal des instructions en fonction de leur fréquence via des arbres de Huffmann. Nos expérimentations montrent que l'envoi du code de la mémoire au processeur représente une part importante des données expédiées. 
-L'adressage de la mémoire pose cependant problème : stocker les compteurs dans le processeur oblige à envoyer 64 bits à la mémoire à chaque accès, la solution étudiée ici est l'usage de compteurs avec post-incrément dupliqués dans l'interface mémoire et le processeur. On discutera des limites de cet adressage et d'éventuelles solutions pour y remédier.
+Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 16 et 64 bits).
+C'est une contrainte pour l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction dominants.
+Or les échanges de données représentent le gros de l'énergie dépensée.
+Cet article fait l'exercice de lever cette contrainte, dans le but de minimiser le nombre de bits échangés entre le processeur et la mémoire.
+Il décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
+Ceci permet d'avoir des instructions de taille arbitraire.
+Pour ne pas devoir envoyer une adresse complète à la mémoire à chaque accès, la solution proposée est l'usage de pointeurs auto-incrémentés dupliqués dans la mémoire et le processeur.
+
+Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon (ce qui explique en partie certains choix simplistes).
+Un premier jeu d'instruction a été défini en TD et son encodage choisi à la main.
+Ceci a permis aux étudiants d'écrire en binôme un assembleur et un simulateur, puis plusieurs milliers de lignes de programmes allant du petit noyau de calcul au jeu vidéo et à l'émulateur.
+Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions des instructions en fonction de leur fréquence via des arbres de Huffmann, et les comparer à l'encodage initial.
+On arrive à une taille moyenne d'instruction entre 9 et 15 bits suivants les programmes.
+ Ces expérimentations montrent aussi que le code représente une part importante des données transitant entre processeur et mémoire. 
+ L'article discute enfin les limites de cette approche, et d'éventuelles solutions pour y remédier.
