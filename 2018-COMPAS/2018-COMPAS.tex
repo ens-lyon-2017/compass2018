@@ -22,9 +22,9 @@
 
 \begin{document}
 
-\title{Une architecture de von Neumann à bus bit-série}
+\title{Une architecture minimisant les échanges\\ entre processeur et mémoire}
 
-\author{too many to mention}
+\author{Florent de Dinechin, \\Yoann Coudert-Osmont, Maxime Darrin, Antonin Dudermel, Alban Reynaud}
 
 \address{
   % \begin{tabular}{cc}
@@ -38,18 +38,42 @@
 \maketitle
 
 \begin{abstract}
-La taille
-  de ce résumé peut atteindre une dizaine de lignes.
-  \MotsCles{un maximum de 5 mots significatifs, en français, doivent être 
-    isolés sous forme de mots-clés.}
+Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 16 et 64 bits).
+C'est une contrainte pour l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction dominants.
+Or les échanges de données représentent le gros de l'énergie dépensée.
+Cet article fait l'exercice de lever cette contrainte, dans le but de minimiser le nombre de bits échangés entre le processeur et la mémoire.
+Il décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
+Ceci permet d'avoir des instructions de taille arbitraire.
+Pour ne pas devoir envoyer une adresse complète à la mémoire à chaque accès, la solution proposée est l'usage de pointeurs auto-incrémentés dupliqués dans la mémoire et le processeur.
+
+Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon (ce qui explique en partie certains choix simplistes).
+Un premier jeu d'instruction a été défini en TD et son encodage choisi à la main.
+Ceci a permis aux étudiants d'écrire en binôme un assembleur et un simulateur, puis plusieurs milliers de lignes de programmes allant du petit noyau de calcul au jeu vidéo et à l'émulateur.
+Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions des instructions en fonction de leur fréquence via des arbres de Huffmann, et les comparer à l'encodage initial.
+On arrive à une taille moyenne d'instruction entre 9 et 15 bits suivants les programmes.
+ Ces expérimentations montrent aussi que le code représente une part importante des données transitant entre processeur et mémoire. 
+ L'article discute enfin les limites de cette approche, et d'éventuelles solutions pour y remédier.
 \end{abstract}
 
+%=========================================================
+\section{Introduction et motivation}
+%=========================================================
 
-\section{Syntaxe de l'assembleur}
+
+\section{Présentation du jeu d'instruction}
+\subsection{Registres généralistes}
+Dans cette expérience nous avons fixé le nombre de registres à 8.
+C'est un choix arbitraire et discutable, motivé par des raisons pédagogiques (rencontrer cette limite dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
 
 Les registres généralistes sont notés r0 à r7.
 Ils sont tous parfaitement identiques, sauf r7 qui reçoit l'adresse de retour en cas de \texttt{call}.
 
+\paragraph{Autocritique} Les architectures modernes offrent typiquement entre 16 et 64 registres.
+Elles offrent également des mécanismes qui exposent dans le jeu d'instruction un sous-ensemble des registres architecturaux, soit de manière explicite (les fenêtres de registres du SPARC), soit de manière implicite (le techniques de renommage qui permettent l'exécution superscalaire).
+
+On pourrait avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
+
+\subsection{Format général des mnémoniques}
 Les instructions commencent toutes par un mnémonique, suivi des opérandes, le tout séparé par des espaces.
 
 Les instructions ALU viennent en version 2 et 3 opérandes, la destination venant toujours en premier.
@@ -84,7 +108,7 @@ boucle:
   jumpif nz boucle  ; encodé en 16 bits, signifie  jump -25 
 \end{verbatim}
 
-\section{Les instructions et leur encodage}
+\subsection{Le jeu d'instructions et son encodage minimal}
 
 
 
