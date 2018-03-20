@@ -5,11 +5,11 @@ c'est du sabotage/de l'exploitation
 
 * une multiplication matricielle
 * un abstract
+* un squelette d'article dans le répertoire 2018-COMPAS
 
 ## Ce qu'il nous faut
 
 * des stats
-* un article
 
 ## Notre projet (proposition d'axe de rédaction par Antonin)
 
