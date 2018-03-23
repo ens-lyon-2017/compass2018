@@ -147,4 +147,11 @@ uint disasm_size(memory_t *mem, uint64_t *ptr);
 */
 uint disasm_pointer(memory_t *mem, uint64_t *ptr);
 
+/*
+    disasm_inst_length() -- give the length of an instruction
+    @arg    id  the identifier of an instruction
+    @returns    the length of the instruction 
+*/
+uint8_t disasm_instr_length(uint id);
+
 #endif	/* DISASM_H */
