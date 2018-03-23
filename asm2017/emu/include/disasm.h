@@ -152,6 +152,6 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr);
     @arg    id  the identifier of an instruction
     @returns    the length of the instruction 
 */
-uint8_t disasm_instr_length(uint id);
+uint disasm_instr_length(uint id);
 
 #endif	/* DISASM_H */

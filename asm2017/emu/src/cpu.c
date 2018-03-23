@@ -56,6 +56,12 @@ void cpu_destroy(cpu_t *cpu)
 static size_t counts[DISASM_INS_COUNT] = { 0 };
 
 /*
+   Stores the number of bits exchanged between the memory and the processor
+   when reading an instruction.
+ */
+static uint instruction_bits_count = 0;
+
+/*
 	set_flags()
 	A quick routine to set the flags of the processor.
 
@@ -483,6 +489,7 @@ void cpu_execute(cpu_t *cpu)
 
 	/* Provide statistics about the number of executed instructions */
 	counts[opcode]++;
+    instruction_bits_count += disasm_instr_length(opcode);
 
 	instructions[opcode](cpu);
 
@@ -496,4 +503,9 @@ void cpu_execute(cpu_t *cpu)
 size_t *cpu_counts(void)
 {
 	return counts;
+}
+
+uint cpu_instruction_bits_count(void)
+{
+    return instruction_bits_count;
 }
