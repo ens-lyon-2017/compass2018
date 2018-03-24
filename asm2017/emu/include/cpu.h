@@ -97,4 +97,7 @@ size_t *cpu_counts(void);
  */
 uint cpu_instruction_bits_count(void);
 
+uint cpu_read_bits_count(void);
+uint cpu_write_bits_count(void);
+uint cpu_ctr_access_bits_count(void);
 #endif	/* CPU_H */
