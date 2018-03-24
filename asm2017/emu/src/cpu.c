@@ -61,9 +61,11 @@ static size_t counts[DISASM_INS_COUNT] = { 0 };
 */
 static uint instruction_bits_count = 0;
 
-/* The number of bits read with `readse` and `readze` instructions. */
+// The number of bits read with `readse` and `readze` instructions.
 static uint read_bits_count = 0;
+// The number of bits written with the `write` instructions.
 static uint write_bits_count = 0;
+// The number of bits communicated with `getctr` and `setctr` instructions.
 static uint ctr_access_bits_count = 0;
 
 /*
@@ -524,6 +526,11 @@ void cpu_execute(cpu_t *cpu)
 
 	instructions[opcode](cpu);
 
+    // The number of instruction bits is always incremented by the
+    // difference between the PC at the begining and the end of the
+    // instruction.
+    // If an instruction modifies the PC (such as `jump`), this modification
+    // is substracted during the execution of this instruction.
     instruction_bits_count += cpu->ptr[PC] - pc_init;
 
 //	for(int i = 0; i < 8; i++)

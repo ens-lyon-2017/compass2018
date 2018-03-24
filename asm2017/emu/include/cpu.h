@@ -92,12 +92,27 @@ void cpu_execute(cpu_t *cpu);
 size_t *cpu_counts(void);
 
 /*
-   cpu_instruction_bits_count() -- statistics about the number of bits exchanged
-   between the processor and the memory when reading instructions.
+   cpu_instruction_bits_count() -- statistics about the number of bits
+   exchanged between the processor and the memory when reading instructions.
  */
 uint cpu_instruction_bits_count(void);
 
+/*
+   cpu_instruction_bits_count() -- statistics about the number of bits
+   exchanged between the processor and the memory when reading the memory.
+ */
 uint cpu_read_bits_count(void);
+
+/*
+   cpu_instruction_bits_count() -- statistics about the number of bits
+   exchanged between the processor and the memory when writing the memory.
+ */
 uint cpu_write_bits_count(void);
+
+/*
+   cpu_instruction_bits_count() -- statistics about the number of bits
+   exchanged between the processor and the memory when getting and setting
+   the counters.
+ */
 uint cpu_ctr_access_bits_count(void);
 #endif	/* CPU_H */

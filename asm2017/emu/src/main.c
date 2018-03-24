@@ -31,6 +31,7 @@ typedef struct
 {
 	uint debugger	:1;
 	uint graphical	:1;
+    uint stats  :1;
 	uint help	:1;
 	uint chip8	:1;
 	uint textprog	:1;
@@ -136,6 +137,8 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->debugger = 1;
 		else if(!strcmp(arg, "-g") || !strcmp(arg, "--graphical"))
 			opt->graphical = 1;
+        else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
+            opt->stats = 1;
 
 		/* Memory geometry */
 		else if(!strcmp(arg, "--geometry"))
@@ -215,6 +218,7 @@ const char *help_string =
 "  --load <file>:<address>\n"
 "                     Load the requested file at the given address before\n"
 "                     starting emulation (address should be a multiple of 8)\n"
+"  -s | --statistics  Print statistics at the end of the execution\n"
 ;
 
 /* Emulated memory and CPU */
@@ -360,6 +364,35 @@ void chip8(const uint8_t *keyboard, void *arg)
 }
 
 /*
+   Print statistics about the exchanges between the memory and the
+   processor.
+*/
+void print_stats(void)
+{
+    uint64_t instr_bits = cpu_instruction_bits_count();
+    uint64_t read_bits = cpu_read_bits_count();
+    uint64_t write_bits = cpu_write_bits_count();
+    uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
+
+    uint64_t data_exchange = instr_bits + read_bits + write_bits + \
+                         ctr_access_bits;
+
+    printf("\n-----------------------------------------------\n");
+    printf("Exchanges between the Memory and the Processor:\n");
+    printf("-----------------------------------------------\n\n");
+    printf(" Exchange Type    | Bits Exchanged | Proportion\n\n");
+    printf(" Instruction Read |   %12ld | %.1f%%\n", instr_bits,
+           (100.0 * instr_bits) / data_exchange);
+    printf(" Memory Read      |   %12ld | %.1f%%\n", read_bits,
+           (100.0 * read_bits) / data_exchange);
+    printf(" Memory Write     |   %12ld | %.1f%%\n", write_bits,
+           (100.0 * write_bits) / data_exchange);
+    printf(" Get/Set Counters |   %12ld | %.1f%%\n", ctr_access_bits,
+           (100.0 * ctr_access_bits) / data_exchange);
+    printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
+}
+
+/*
 	main()
 	In a normal execution flow, parses the command-line arguments, creates
 	a virtual CPU and memory, loads the provided file into memory, then
@@ -485,6 +518,9 @@ int main(int argc, char **argv)
 		   explicitly requires it, so close the window immediately */
 		graphical_stop();
 	}
+
+    if (opt.stats)
+        print_stats();
 
 	return 0;
 }
