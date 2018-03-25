@@ -518,7 +518,7 @@ int main(int argc, char **argv)
     }
 
     /* Load instructions set */
-    load_encoding(opt.huffman_file);
+    if(load_encoding(opt.huffman_file)) fatal("Bad input file");
 
     /* Create a CPU and give it the memory */
     cpu = cpu_new(mem);
