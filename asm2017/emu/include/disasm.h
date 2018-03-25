@@ -52,7 +52,15 @@ typedef enum
 	ctgy_control	= 'C',
 } ctgy_t;
 
+/*
+    load_encoding() -- This function try to load the file whose path is specified in filename
+    If NULL it load the default instruction set
+    It builds ids array and length array
 
+    @arg filename/path
+    @returns non-zero if it fails
+ */
+uint load_encoding(const char *filename);
 
 //---
 //	Disassembler functions

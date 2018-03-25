@@ -45,7 +45,8 @@ static const char instructions[37][16] = {
         "--- C (res)",
 };
 
-/* loa_encoding() -- Take the path of the huffman encoding and load it. if filename is null then load the default one */
+/* loa_encoding() -- Take the path of the huffman encoding and load it. if filename is null then load the default one
+    return non zero if it fails */
 uint load_encoding(const char *filename)
 {
     /* If filename is not null we load the associated file et build the encoding */
@@ -53,38 +54,45 @@ uint load_encoding(const char *filename)
     {
         FILE *huffman_f = fopen(filename, "r");
 
-        /* Read the size of the larger opcode */
-        fscanf(huffman_f, "%u", &opcode_size);
-
-        /* Allocate an array able to store any opcode */
-        ids = (uint8_t *) malloc(sizeof(uint8_t) * (1 << opcode_size));
-
-        char mnemonic[64];
-        uint8_t iid;
-        uint8_t size;
-        uint64_t opcode;
-
-        for (int i = 0; i < 36; i++)
+        if(huffman_f)
         {
-            fscanf(huffman_f, "%s %u %u %u", &mnemonic, &iid, &size, &opcode);
+            /* Read the size of the larger opcode */
+            fscanf(huffman_f, "%u", &opcode_size);
 
-            /* We build the integers linked to the opcode */
-            opcode = opcode << (opcode_size - size);
+            /* Allocate an array able to store any opcode */
+            ids = (uint8_t *) malloc(sizeof(uint8_t) * (1 << opcode_size));
 
-            for (int j = 0; j < (1 << (opcode_size - size)); j++)
-                ids[opcode + j] = iid;
+            char mnemonic[64];
+            uint8_t iid;
+            uint8_t size;
+            uint64_t opcode;
 
-            /* Set the size of that opcode */
-            length[iid] = size;
+            for (int i = 0; i < 36; i++)
+            {
+                fscanf(huffman_f, "%s %u %u %u", &mnemonic, &iid, &size, &opcode);
 
+                /* We build the integers linked to the opcode */
+                opcode = opcode << (opcode_size - size);
+
+                for (int j = 0; j < (1 << (opcode_size - size)); j++)
+                    ids[opcode + j] = iid;
+
+                /* Set the size of that opcode */
+                length[iid] = size;
+
+            }
+
+            fclose(huffman_f);
         }
-
-        fclose(huffman_f);
+        else
+            return 1;
     }
 
         /* Loading default encoding */
     else
         ids = (uint8_t *) default_ids;
+
+    return 0;
 
 }
 

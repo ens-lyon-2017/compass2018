@@ -14,6 +14,7 @@
 #include <cpu.h>
 #include <debugger.h>
 #include <graphical.h>
+#include <disasm.h>
 
 /* I wished to have limited the use of SDL to graphical.h, but I need it here
    to map some keyboard keys to Chip8's 16 keys */
@@ -129,6 +130,9 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 {
     /* Clear structure with default values */
     *opt = (opt_t) {0};
+
+    /* If not updated by cli options we load the default instructions set */
+    opt->huffman_file = NULL;
 
     error_clear();
 
@@ -491,6 +495,9 @@ int main(int argc, char **argv)
         int x = memory_load_file(mem, opt.load_addr, opt.load_file);
         if (x) return 1;
     }
+
+    /* Load instructions set */
+    load_encoding(opt.huffman_file);
 
     /* Create a CPU and give it the memory */
     cpu = cpu_new(mem);
