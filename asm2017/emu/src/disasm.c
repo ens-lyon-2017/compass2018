@@ -45,6 +45,15 @@ static const char instructions[37][16] = {
         "--- C (res)",
 };
 
+/*
+   The number of bits reserved to give information about the arguments and to
+   classify the instructions. The real name of the instruction starts at the
+   bit with the number INSTR_INFORMATION_BITS.
+   If anybody wants to change the information about instructions, the value
+   of this macro should be modified consequently.
+*/
+#define INSTR_INFORMATION_BITS (6)
+
 /* loa_encoding() -- Take the path of the huffman encoding and load it. if filename is null then load the default one
     return non zero if it fails */
 uint load_encoding(const char *filename)
@@ -99,7 +108,7 @@ uint load_encoding(const char *filename)
 /* disasm_opcode() -- read an instruction code */
 uint disasm_opcode(memory_t *mem, uint64_t *ptr, const char **format)
 {
-    uint opcode = memory_read(mem, *ptr, 7) & 0x7f;
+    uint opcode = memory_read(mem, *ptr, opcode_size) & 0x7f;
     uint id = ids[opcode & 0x7f];
 
     *ptr += length[id];
@@ -221,4 +230,9 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr)
 uint disasm_instr_length(uint id)
 {
     return length[id];
+}
+
+char *disasm_instruction_name(uint id)
+{
+    return &instructions[id][INSTR_INFORMATION_BITS];
 }

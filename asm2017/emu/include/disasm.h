@@ -162,4 +162,7 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr);
 */
 uint disasm_instr_length(uint id);
 
+/* Gives the name of the id-th instruction. */
+char *disasm_instruction_name(uint id);
+
 #endif	/* DISASM_H */

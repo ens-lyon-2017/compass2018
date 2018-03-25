@@ -335,7 +335,7 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
-    
+ 
     // The size of a word is 64 bits, so when requested to read an address,
     // 64 bits are sent from the memory to the processor.
     ctr_access_bits_count += 64;
@@ -350,6 +350,8 @@ static void push(cpu_t *cpu)
 	if(cpu->ptr[SP] < cpu->mem->text) fatal("Stack overflow (SP = %lu) "
 		"at PC = %lu\n", cpu->ptr[SP], cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
+
+    write_bits_count += 64;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
