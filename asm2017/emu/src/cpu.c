@@ -351,6 +351,8 @@ static void push(cpu_t *cpu)
 		"at PC = %lu\n", cpu->ptr[SP], cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
 
+    write_bits_count += 64;
+
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
 }
