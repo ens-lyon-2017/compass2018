@@ -37,6 +37,15 @@ static const char instructions[37][16] = {
 	"--- C (res)",
 };
 
+/*
+   The number of bits reserved to give information about the arguments and to
+   classify the instructions. The real name of the instruction starts at the
+   bit with the number INSTR_INFORMATION_BITS.
+   If anybody wants to change the information about instructions, the value
+   of this macro should be modified consequently.
+*/
+#define INSTR_INFORMATION_BITS (6)
+
 /* disasm_opcode() -- read an instruction code */
 uint disasm_opcode(memory_t *mem, uint64_t *ptr, const char **format)
 {
@@ -162,4 +171,9 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr)
 uint disasm_instr_length(uint id)
 {
     return length[id];
+}
+
+char *disasm_instruction_name(uint id)
+{
+    return &instructions[id][INSTR_INFORMATION_BITS];
 }
