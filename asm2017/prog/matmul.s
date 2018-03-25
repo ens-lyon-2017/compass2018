@@ -1,3 +1,7 @@
+;------------------------------------------------------------------------------;
+;                       Multiplication de matrices                             ;
+;------------------------------------------------------------------------------;
+
 	call get_m1_ptr
 	let r0 r6
 	;; call get_m2_ptr
@@ -159,6 +163,8 @@ scalar_prod_loop:
 	return
 	
 multlibmult:
+	;; r2 <- r1*r0
+	;; r1, r0 remain
 	push 64 r0
 	push 64 r1
 	leti r2 0
@@ -169,12 +175,13 @@ multlibmult:
 	pop 64 r0
 	return
 
+	;; r2 <- r2 + r1*r0
+	;; r0, r1 destroyed
 multlibsum:
 	shift right r0 1
 	jumpif nc multlibsk
 	add2 r2 r1
 multlibsk:
-	add2i r0 0
 	shift left r1 1
 	cmpi r0 0
 	jumpif nz multlibsum
