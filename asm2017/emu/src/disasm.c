@@ -2,7 +2,6 @@
 #include <util.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <bits/types/FILE.h>
 #include <stdio.h>
 
 #define    r4(n)    n, n, n, n
@@ -23,7 +22,7 @@ static uint8_t length[37] = {
         r8(4), 4, 5, 5, 4, 4, r8(6), r8(7), r8(7)
 };
 
-static uint8_t opcode_size = 7;
+static uint opcode_size = 7;
 static uint8_t *ids;
 
 
@@ -45,20 +44,16 @@ static const char instructions[37][16] = {
         "--- C (res)",
 };
 
-/*
-   The number of bits reserved to give information about the arguments and to
-   classify the instructions. The real name of the instruction starts at the
-   bit with the number INSTR_INFORMATION_BITS.
-   If anybody wants to change the information about instructions, the value
-   of this macro should be modified consequently.
-*/
+/* Number of metadata bytes in the array above. The instruction mnemonic starts
+   at offset INTSR_INFORMATION_BITS. */
 #define INSTR_INFORMATION_BITS (6)
 
-/* loa_encoding() -- Take the path of the huffman encoding and load it. if filename is null then load the default one
-    return non zero if it fails */
+/* load_encoding() -- load a huffman encoding as instruction set
+   Loads the default encoding if "filename" is NULL. Returns non-zero
+   on failure */
 uint load_encoding(const char *filename)
 {
-    /* If filename is not null we load the associated file et build the encoding */
+    /* If filename is not null we load the associated file and build the encoding */
     if (filename)
     {
         FILE *huffman_f = fopen(filename, "r");
@@ -72,13 +67,13 @@ uint load_encoding(const char *filename)
             ids = (uint8_t *) malloc(sizeof(uint8_t) * (1 << opcode_size));
 
             char mnemonic[64];
-            uint8_t iid;
-            uint8_t size;
+            uint iid;
+            uint size;
             uint64_t opcode;
 
             for (int i = 0; i < 36; i++)
             {
-                fscanf(huffman_f, "%s %u %u %u", &mnemonic, &iid, &size, &opcode);
+                fscanf(huffman_f, "%s %u %u %lu", mnemonic, &iid, &size, &opcode);
 
                 /* We build the integers linked to the opcode */
                 opcode = opcode << (opcode_size - size);
@@ -232,7 +227,7 @@ uint disasm_instr_length(uint id)
     return length[id];
 }
 
-char *disasm_instruction_name(uint id)
+const char *disasm_instruction_name(uint id)
 {
-    return &instructions[id][INSTR_INFORMATION_BITS];
+    return instructions[id] + INSTR_INFORMATION_BITS;
 }

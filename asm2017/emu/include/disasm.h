@@ -53,13 +53,13 @@ typedef enum
 } ctgy_t;
 
 /*
-    load_encoding() -- This function try to load the file whose path is specified in filename
-    If NULL it load the default instruction set
-    It builds ids array and length array
+    load_encoding() -- load a dynamic instruction set encoding from a file
+    If "filename" is NULL, loads the default instruction set. This function
+    internally builds a fast opcode decoding array.
 
-    @arg filename/path
-    @returns non-zero if it fails
- */
+    @arg	filename Path of the dynamic instruction set file
+    @returns		Zero on success, non-zero on failure
+*/
 uint load_encoding(const char *filename);
 
 //---
@@ -163,6 +163,6 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr);
 uint disasm_instr_length(uint id);
 
 /* Gives the name of the id-th instruction. */
-char *disasm_instruction_name(uint id);
+const char *disasm_instruction_name(uint id);
 
 #endif	/* DISASM_H */
