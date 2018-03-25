@@ -56,6 +56,19 @@ void cpu_destroy(cpu_t *cpu)
 static size_t counts[DISASM_INS_COUNT] = { 0 };
 
 /*
+   Stores the number of bits exchanged between the memory and the processor
+   when reading an instruction.
+*/
+static uint instruction_bits_count = 0;
+
+// The number of bits read with `readse` and `readze` instructions.
+static uint read_bits_count = 0;
+// The number of bits written with the `write` instructions.
+static uint write_bits_count = 0;
+// The number of bits communicated with `getctr` and `setctr` instructions.
+static uint ctr_access_bits_count = 0;
+
+/*
 	set_flags()
 	A quick routine to set the flags of the processor.
 
@@ -202,6 +215,9 @@ static void readze(cpu_t *cpu)
 	uint ptr = get(pointer), size = get(size), rd = get(reg);
 	cpu->r[rd] = memory_read(cpu->mem, cpu->ptr[ptr], size);
 	cpu->ptr[ptr] += size;
+    if (ptr == PC)
+        instruction_bits_count -= size;
+    read_bits_count += size;
 }
 
 static void readse(cpu_t *cpu)
@@ -210,6 +226,9 @@ static void readse(cpu_t *cpu)
 	uint64_t data = memory_read(cpu->mem, cpu->ptr[ptr], size);
 	cpu->r[rd] = sign_extend(data, size);
 	cpu->ptr[ptr] += size;
+    if (ptr == PC)
+        instruction_bits_count -= size;
+    read_bits_count += size;
 }
 
 static void jump(cpu_t *cpu)
@@ -218,6 +237,12 @@ static void jump(cpu_t *cpu)
 	uint64_t instruction_base = cpu->ptr[PC] - 4;
 
 	int64_t diff = get(addr, NULL);
+
+    // `instruction_bits_counts` is always incremented by the difference
+    // between PC before having read the instruction and after having
+    // executed it. In order not to count the jump in the bits exchanged,
+    // instruction_bits_count is decremented by diff.
+    instruction_bits_count -= diff;
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -236,6 +261,7 @@ static void jumpif(cpu_t *cpu)
 	int64_t diff = get(addr, NULL);
 
 	if(!conds[cnd]) return;
+    instruction_bits_count -= diff;
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -276,6 +302,8 @@ static void _write(cpu_t *cpu)
 	uint ptr = get(pointer), size = get(size), rs = get(reg);
 	memory_write(cpu->mem, cpu->ptr[ptr], cpu->r[rs], size);
 	cpu->ptr[ptr] += size;
+    if (ptr == PC)
+        instruction_bits_count -= size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -285,13 +313,18 @@ static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
 	cpu->r[7] = cpu->ptr[PC];
+    instruction_bits_count -= target - cpu->ptr[PC];
 	cpu->ptr[PC] = target;
 }
 
 static void setctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rs = get(reg);
+    if (ptr == PC)
+        instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
 	cpu->ptr[ptr] = cpu->r[rs];
+
+    ctr_access_bits_count += 64;
 
 	/* Let the debugger know about this counter change */
 	cpu->t = 1;
@@ -301,6 +334,10 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
+    
+    // The size of a word is 64 bits, so when requested to read an address,
+    // 64 bits are sent from the memory to the processor.
+    ctr_access_bits_count += 64;
 }
 
 static void push(cpu_t *cpu)
@@ -479,12 +516,22 @@ void cpu_dump(cpu_t *cpu, FILE *stream)
 /* cpu_execute() -- read an execute an instruction */
 void cpu_execute(cpu_t *cpu)
 {
+    // The PC before reading the instruction.
+    uint pc_init = cpu->ptr[PC];
+
 	uint opcode = disasm_opcode(cpu->mem, &cpu->ptr[PC], NULL);
 
 	/* Provide statistics about the number of executed instructions */
 	counts[opcode]++;
 
 	instructions[opcode](cpu);
+
+    // The number of instruction bits is always incremented by the
+    // difference between the PC at the begining and the end of the
+    // instruction.
+    // If an instruction modifies the PC (such as `jump`), this modification
+    // is substracted during the execution of this instruction.
+    instruction_bits_count += cpu->ptr[PC] - pc_init;
 
 //	for(int i = 0; i < 8; i++)
 //	{
@@ -496,4 +543,24 @@ void cpu_execute(cpu_t *cpu)
 size_t *cpu_counts(void)
 {
 	return counts;
+}
+
+uint cpu_instruction_bits_count(void)
+{
+    return instruction_bits_count;
+}
+
+uint cpu_read_bits_count(void)
+{
+    return read_bits_count;
+}
+
+uint cpu_write_bits_count(void)
+{
+    return write_bits_count;
+}
+
+uint cpu_ctr_access_bits_count(void)
+{
+    return ctr_access_bits_count;
 }
