@@ -29,26 +29,31 @@
 */
 typedef struct
 {
-	uint debugger	:1;
-	uint graphical	:1;
+    uint debugger    :1;
+    uint graphical    :1;
     uint stats  :1;
-	uint help	:1;
-	uint chip8	:1;
-	uint textprog	:1;
-	uint scale;
+    uint help    :1;
+    uint chip8    :1;
+    uint textprog    :1;
+    uint scale;
 
-	struct {
-		uint64_t text;
-		uint64_t stack;
-		uint64_t data;
-		uint64_t vram;
-	};
+    struct
+    {
+        uint64_t text;
+        uint64_t stack;
+        uint64_t data;
+        uint64_t vram;
+    };
 
-	const char *filename;		/* Emulated binary file */
+    const char *filename;        /* Emulated binary file */
 
-	/* Load additional file if requested */
-	uint64_t load_addr;
-	const char *load_file;
+    /* Load additional file if requested */
+    uint64_t load_addr;
+    const char *load_file;
+
+    /* Huffman code file */
+    const char *huffman_file;
+
 } opt_t;
 
 /*
@@ -66,16 +71,16 @@ typedef struct
 */
 static uint64_t sizetoi(const char *arg)
 {
-	if(!isdigit(arg[0])) return 0;
+    if (!isdigit(arg[0])) return 0;
 
-	uint64_t value = 0;
-	while(isdigit(*arg)) value = value * 10 + (*arg - '0'), arg++;
+    uint64_t value = 0;
+    while (isdigit(*arg)) value = value * 10 + (*arg - '0'), arg++;
 
-	if(!arg[0]) return value;
-	if(arg[1]) return 0;
-	if(arg[0] == 'k') return value << 10;
-	if(arg[0] == 'M') return value << 20;
-	return 0;
+    if (!arg[0]) return value;
+    if (arg[1]) return 0;
+    if (arg[0] == 'k') return value << 10;
+    if (arg[0] == 'M') return value << 20;
+    return 0;
 }
 
 /*
@@ -84,16 +89,16 @@ static uint64_t sizetoi(const char *arg)
 */
 static int read_geometry(const char *arg, opt_t *opt)
 {
-	char str[4][64];
-	int x = sscanf(arg, "%64[0-9kM]:%64[0-9kM]:%64[0-9kM]:%64[0-9kM]",
-		str[0], str[1], str[2], str[3]);
-	if(x < 4) return 1;
+    char str[4][64];
+    int x = sscanf(arg, "%64[0-9kM]:%64[0-9kM]:%64[0-9kM]:%64[0-9kM]",
+                   str[0], str[1], str[2], str[3]);
+    if (x < 4) return 1;
 
-	opt->text	= sizetoi(str[0]);
-	opt->stack	= sizetoi(str[1]);
-	opt->data	= sizetoi(str[2]);
-	opt->vram	= sizetoi(str[3]);
-	return 0;
+    opt->text = sizetoi(str[0]);
+    opt->stack = sizetoi(str[1]);
+    opt->data = sizetoi(str[2]);
+    opt->vram = sizetoi(str[3]);
+    return 0;
 }
 
 /*
@@ -102,15 +107,16 @@ static int read_geometry(const char *arg, opt_t *opt)
 */
 static int read_load(const char *arg, opt_t *opt)
 {
-	char str[64];
-	int offset;
-	int x = sscanf(arg, "%64[0-9kM]:%n", str, &offset);
-	if(x != 1) return 1;
+    char str[64];
+    int offset;
+    int x = sscanf(arg, "%64[0-9kM]:%n", str, &offset);
+    if (x != 1) return 1;
 
-	opt->load_addr	= sizetoi(str);
-	opt->load_file	= arg + offset;
-	return 0;
+    opt->load_addr = sizetoi(str);
+    opt->load_file = arg + offset;
+    return 0;
 }
+
 
 /*
 	parse_args() -- parse command-line options into an opt_t object
@@ -121,76 +127,88 @@ static int read_load(const char *arg, opt_t *opt)
 */
 static void parse_args(int argc, char **argv, opt_t *opt)
 {
-	/* Clear structure with default values */
-	*opt = (opt_t){ 0 };
+    /* Clear structure with default values */
+    *opt = (opt_t) {0};
 
-	error_clear();
+    error_clear();
 
-	for(int i = 1; i < argc; i++)
-	{
-		const char *arg = argv[i];
+    for (int i = 1; i < argc; i++)
+    {
+        const char *arg = argv[i];
 
-		/* Mode arguments */
-		if(!strcmp(arg, "-r") || !strcmp(arg, "--run"))
-			opt->debugger = 0;
-		else if(!strcmp(arg, "-d") || !strcmp(arg, "--debug"))
-			opt->debugger = 1;
-		else if(!strcmp(arg, "-g") || !strcmp(arg, "--graphical"))
-			opt->graphical = 1;
-        else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
+        /* Mode arguments */
+        if (!strcmp(arg, "-r") || !strcmp(arg, "--run"))
+            opt->debugger = 0;
+        else if (!strcmp(arg, "-d") || !strcmp(arg, "--debug"))
+            opt->debugger = 1;
+        else if (!strcmp(arg, "-g") || !strcmp(arg, "--graphical"))
+            opt->graphical = 1;
+        else if (!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
             opt->stats = 1;
 
-		/* Memory geometry */
-		else if(!strcmp(arg, "--geometry"))
-		{
-			arg = argv[++i];
-			if(!arg) error("expected value after --stack-addr");
-			else if(read_geometry(arg, opt))
-				error("invalid geometry: '%s'", arg);
-		}
+            /* Memory geometry */
+        else if (!strcmp(arg, "--geometry"))
+        {
+            arg = argv[++i];
+            if (!arg) error("expected value after --stack-addr");
+            else if (read_geometry(arg, opt))
+                error("invalid geometry: '%s'", arg);
+        }
 
-		/* Additional data file */
-		else if(!strcmp(arg, "--load"))
-		{
-			arg = argv[++i];
-			if(!arg) error("expected argument after --load");
-			else if(read_load(arg, opt))
-				error("invalid load argument: '%s'", arg);
-		}
+            /* Additional data file */
+        else if (!strcmp(arg, "--load"))
+        {
+            arg = argv[++i];
+            if (!arg) error("expected argument after --load");
+            else if (read_load(arg, opt))
+                error("invalid load argument: '%s'", arg);
+        }
 
-		/* Load from a text program */
-		else if(!strcmp(arg, "--text")) opt->textprog = 1;
+            /* Load huffman code file */
+        else if (!strcmp(arg, "--load-huffman") || !strcmp(arg, "-lh"))
+        {
+            arg = argv[++i];
+            if (!arg) error("expected argument after --load-huffman");
+                /* Check if the specified file is accesible */
+            else if (access(arg, F_OK) == -1)
+                error("invalid huffman file argument: '%s'", arg);
+            else
+                opt->huffman_file = arg;
+        }
 
-		/* Special handlers for the Chip8 emulator */
-		else if(!strcmp(arg, "--chip8")) opt->chip8 = 1;
+            /* Load from a text program */
+        else if (!strcmp(arg, "--text")) opt->textprog = 1;
 
-		/* Graphical screen scaling */
-		else if(!strcmp(arg, "--scale"))
-		{
-			arg = argv[++i];
-			if(!arg) error("expected integer after --scale");
-			uint s = atoi(arg);
-			if(s <= 0) warn("defaulting scale to 1"), s = 1;
-			if(s > 16) warn("defaulting scale to 16"), s = 16;
-			opt->scale = s;
-		}
+            /* Special handlers for the Chip8 emulator */
+        else if (!strcmp(arg, "--chip8")) opt->chip8 = 1;
 
-		/* Help message */
-		else if(!strcmp(arg, "--help")) opt->help = 1;
+            /* Graphical screen scaling */
+        else if (!strcmp(arg, "--scale"))
+        {
+            arg = argv[++i];
+            if (!arg) error("expected integer after --scale");
+            uint s = atoi(arg);
+            if (s <= 0) warn("defaulting scale to 1"), s = 1;
+            if (s > 16) warn("defaulting scale to 16"), s = 16;
+            opt->scale = s;
+        }
 
-		/* Unknown predicates */
-		else if(arg[0] == '-') error("unknown predicate '%s'", arg);
+            /* Help message */
+        else if (!strcmp(arg, "--help")) opt->help = 1;
 
-		/* Other arguments are considered to be the input file name */
-		else
-		{
-			if(opt->filename)
-				error("unexpected file name: '%s'", arg);
-			else opt->filename = arg;
-		}
-	}
+            /* Unknown predicates */
+        else if (arg[0] == '-') error("unknown predicate '%s'", arg);
 
-	error_check();
+            /* Other arguments are considered to be the input file name */
+        else
+        {
+            if (opt->filename)
+                error("unexpected file name: '%s'", arg);
+            else opt->filename = arg;
+        }
+    }
+
+    error_check();
 }
 
 
@@ -200,32 +218,31 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 //---
 
 const char *help_string =
-"emu - an emulator and debugger for a fictional processor\n"
-"usage: %s [-r|-d] [-g] <binary> [options...]\n\n"
+        "emu - an emulator and debugger for a fictional processor\n"
+                "usage: %s [-r|-d] [-g] <binary> [options...]\n\n"
 
-"Available run modes (default is -r):\n"
-"  -r | --run         Normal execution, shows CPU state when program ends\n"
-"  -d | --debug       Run the debugger: step-by-step, breakpoints, etc\n"
-"  -g | --graphical   With -r or -d, enable graphical I/O using SDL\n\n"
+                "Available run modes (default is -r):\n"
+                "  -r | --run         Normal execution, shows CPU state when program ends\n"
+                "  -d | --debug       Run the debugger: step-by-step, breakpoints, etc\n"
+                "  -g | --graphical   With -r or -d, enable graphical I/O using SDL\n\n"
 
-"Available options:\n"
-"  --text             Load a text format program instead of a binary program\n"
-"  --scale <factor>   Set the scale factor of the graphical screen\n"
-"  --chip8            Enable special features for the chip8 emulator\n"
-"  --geometry <text>:<stack>:<data>:<vram>\n"
-"                     Set the size of the four memory segments ('k' or 'M'\n"
-"                     suffixes may be used)\n"
-"  --load <file>:<address>\n"
-"                     Load the requested file at the given address before\n"
-"                     starting emulation (address should be a multiple of 8)\n"
-"  -s | --statistics  Print statistics at the end of the execution\n"
-;
+                "Available options:\n"
+                "  --text             Load a text format program instead of a binary program\n"
+                "  --scale <factor>   Set the scale factor of the graphical screen\n"
+                "  --chip8            Enable special features for the chip8 emulator\n"
+                "  --geometry <text>:<stack>:<data>:<vram>\n"
+                "                     Set the size of the four memory segments ('k' or 'M'\n"
+                "                     suffixes may be used)\n"
+                "  --load <file>:<address>\n"
+                "                     Load the requested file at the given address before\n"
+                "                     starting emulation (address should be a multiple of 8)\n"
+                "  -s | --statistics  Print statistics at the end of the execution\n";
 
 /* Emulated memory and CPU */
-static memory_t *mem	= NULL;
-static cpu_t *cpu	= NULL;
+static memory_t *mem = NULL;
+static cpu_t *cpu = NULL;
 /* PID of the main thread - this variable is also used by graphical.c */
-pid_t main_thread	= 0;
+pid_t main_thread = 0;
 
 /*
 	help()
@@ -235,8 +252,8 @@ pid_t main_thread	= 0;
 */
 void help(const char **argv)
 {
-	printf(help_string, argv[0]);
-	exit(0);
+    printf(help_string, argv[0]);
+    exit(0);
 }
 
 /*
@@ -245,8 +262,8 @@ void help(const char **argv)
 */
 void quit(void)
 {
-	if(cpu) cpu_destroy(cpu);
-	if(mem) memory_destroy(mem);
+    if (cpu) cpu_destroy(cpu);
+    if (mem) memory_destroy(mem);
 }
 
 /*
@@ -257,41 +274,41 @@ void quit(void)
 */
 void sigh(int signum)
 {
-	size_t *counts = cpu_counts();
+    size_t *counts = cpu_counts();
 
-	for(uint i = 0; i < DISASM_INS_COUNT; i++)
-	{
-		const char *format = disasm_format(i);
-		printf("  %6s %-6zu", format + 6, counts[i]);
-		if((i & 7) == 7) printf("\n");
-	}
+    for (uint i = 0; i < DISASM_INS_COUNT; i++)
+    {
+        const char *format = disasm_format(i);
+        printf("  %6s %-6zu", format + 6, counts[i]);
+        if ((i & 7) == 7) printf("\n");
+    }
 
-	if((DISASM_INS_COUNT & 7) != 7) printf("\n");
+    if ((DISASM_INS_COUNT & 7) != 7) printf("\n");
 
-	/* Prevent the terminal from getting screwed up */
-	endwin();
-	/* Free the resources used by the emulator, as in normal termination */
-	quit();
+    /* Prevent the terminal from getting screwed up */
+    endwin();
+    /* Free the resources used by the emulator, as in normal termination */
+    quit();
 
-	/* Since we override the default handler, we need to provide
-	   information on what went wrong by ourselves */
-	if(signum == SIGINT)
-		write(STDERR_FILENO, "Bye!\n", 5);
-	else if(signum == SIGSEGV)
-		write(STDERR_FILENO, "Segmentation fault!\n", 20);
-	else if(signum == SIGTERM)
-		write(STDERR_FILENO, "Terminated.\n", 12);
-	else
-	{
-		char str[] = "Killed by signal <>.\n";
-		str[17] = '0' + signum / 10;
-		str[18] = '0' + signum % 10;
-		write(STDERR_FILENO, str, 20);
-	}
+    /* Since we override the default handler, we need to provide
+       information on what went wrong by ourselves */
+    if (signum == SIGINT)
+        write(STDERR_FILENO, "Bye!\n", 5);
+    else if (signum == SIGSEGV)
+        write(STDERR_FILENO, "Segmentation fault!\n", 20);
+    else if (signum == SIGTERM)
+        write(STDERR_FILENO, "Terminated.\n", 12);
+    else
+    {
+        char str[] = "Killed by signal <>.\n";
+        str[17] = '0' + signum / 10;
+        str[18] = '0' + signum % 10;
+        write(STDERR_FILENO, str, 20);
+    }
 
-	/* exit() is not async-signal-safe because of exit handlers, however
-	   _exit() is */
-	_exit((signum == SIGINT) ? 0 : 2);
+    /* exit() is not async-signal-safe because of exit handlers, however
+       _exit() is */
+    _exit((signum == SIGINT) ? 0 : 2);
 }
 
 /*
@@ -299,7 +316,7 @@ void sigh(int signum)
 */
 void sigh_sleep(__attribute__((unused)) int sigusr1)
 {
-	cpu->sleep = 0;
+    cpu->sleep = 0;
 }
 
 /*
@@ -307,8 +324,8 @@ void sigh_sleep(__attribute__((unused)) int sigusr1)
 */
 void sigh_close(__attribute__((unused)) int sigusr2)
 {
-	/* Make the CPU halt */
-	cpu->s = 1;
+    /* Make the CPU halt */
+    cpu->s = 1;
 }
 
 /*
@@ -322,45 +339,45 @@ void sigh_close(__attribute__((unused)) int sigusr2)
 */
 void chip8(const uint8_t *keyboard, void *arg)
 {
-	cpu_t *cpu = arg;
-	uint64_t timer_delay	= 0x881e0, delay;
-	uint64_t timer_audio	= 0x881f0, audio;
-	uint64_t timer_cpufreq	= 0x88240, cpufreq;
+    cpu_t *cpu = arg;
+    uint64_t timer_delay = 0x881e0, delay;
+    uint64_t timer_audio = 0x881f0, audio;
+    uint64_t timer_cpufreq = 0x88240, cpufreq;
 
-	/* Wake up the sleeping processor */
-	kill(main_thread, SIGUSR1);
+    /* Wake up the sleeping processor */
+    kill(main_thread, SIGUSR1);
 
-	/* Do not try to interact with the memory if emulation has stopped */
-	if(cpu->s) return;
+    /* Do not try to interact with the memory if emulation has stopped */
+    if (cpu->s) return;
 
-	delay = memory_read(cpu->mem, timer_delay, 8);
-	if(delay) memory_write(cpu->mem, timer_delay, delay - 1, 8);
+    delay = memory_read(cpu->mem, timer_delay, 8);
+    if (delay) memory_write(cpu->mem, timer_delay, delay - 1, 8);
 
-	audio = memory_read(cpu->mem, timer_audio, 8);
-	if(audio) memory_write(cpu->mem, timer_audio, audio - 1, 8);
+    audio = memory_read(cpu->mem, timer_audio, 8);
+    if (audio) memory_write(cpu->mem, timer_audio, audio - 1, 8);
 
-	cpufreq = memory_read(cpu->mem, timer_cpufreq, 8);
-	memory_write(cpu->mem, timer_cpufreq, cpufreq + 10, 8);
+    cpufreq = memory_read(cpu->mem, timer_cpufreq, 8);
+    memory_write(cpu->mem, timer_cpufreq, cpufreq + 10, 8);
 
-	uint64_t keybuffer	= 0x881b0;
+    uint64_t keybuffer = 0x881b0;
 
-	#define _(x) SDL_SCANCODE_ ## x
-	SDL_Scancode keys[16] = {
-		_(X), _(1), _(2), _(3),
-		_(Q), _(W), _(E), _(A),
-		_(S), _(D), _(Z), _(C),
-		_(4), _(R), _(F), _(V),
-	};
-	#undef _
+#define _(x) SDL_SCANCODE_ ## x
+    SDL_Scancode keys[16] = {
+            _(X), _(1), _(2), _(3),
+            _(Q), _(W), _(E), _(A),
+            _(S), _(D), _(Z), _(C),
+            _(4), _(R), _(F), _(V),
+    };
+#undef _
 
-	uint16_t state = 0;
-	for(int i = 0; i < 16; i++)
-	{
-		state <<= 1;
-		if(keyboard[keys[i]]) state |= 1;
-	}
+    uint16_t state = 0;
+    for (int i = 0; i < 16; i++)
+    {
+        state <<= 1;
+        if (keyboard[keys[i]]) state |= 1;
+    }
 
-	memory_write(cpu->mem, keybuffer, state, 16);
+    memory_write(cpu->mem, keybuffer, state, 16);
 }
 
 /*
@@ -404,123 +421,123 @@ void print_stats(void)
 */
 int main(int argc, char **argv)
 {
-	/* Register the exit handler for normal program termination */
-	atexit(quit);
+    /* Register the exit handler for normal program termination */
+    atexit(quit);
 
-	/* Intialize the RNG (which is used by the rand instruction) */
-	srand(clock());
+    /* Intialize the RNG (which is used by the rand instruction) */
+    srand(clock());
 
-	//---
-	//	Setup some signal handling
-	//---
+    //---
+    //	Setup some signal handling
+    //---
 
-	main_thread = getpid();
+    main_thread = getpid();
 
-	/* Gracefully catch some termination events or user interruptions */
-	struct sigaction action = { 0 };
-	action.sa_handler	= sigh;
-	action.sa_flags		= SA_RESTART;
-	sigemptyset(&action.sa_mask);
+    /* Gracefully catch some termination events or user interruptions */
+    struct sigaction action = {0};
+    action.sa_handler = sigh;
+    action.sa_flags = SA_RESTART;
+    sigemptyset(&action.sa_mask);
 
-	/* SIGINT: Interrupted by Ctrl+C */
-	sigaction(SIGINT,  &action, NULL);
-	/* SIGSEGV: Segmentation faults */
-	sigaction(SIGSEGV, &action, NULL);
-	/* SIGTERM: Killed by user/system (often) */
-	sigaction(SIGTERM, &action, NULL);
+    /* SIGINT: Interrupted by Ctrl+C */
+    sigaction(SIGINT, &action, NULL);
+    /* SIGSEGV: Segmentation faults */
+    sigaction(SIGSEGV, &action, NULL);
+    /* SIGTERM: Killed by user/system (often) */
+    sigaction(SIGTERM, &action, NULL);
 
-	/* Add a SIGUSR1 handler to wake emulated programs from sleep */
-	action.sa_handler	= sigh_sleep;
-	action.sa_flags		= SA_RESTART;
-	sigemptyset(&action.sa_mask);
+    /* Add a SIGUSR1 handler to wake emulated programs from sleep */
+    action.sa_handler = sigh_sleep;
+    action.sa_flags = SA_RESTART;
+    sigemptyset(&action.sa_mask);
 
-	/* SIGUSR1: Waken by timer */
-	sigaction(SIGUSR1, &action, NULL);
+    /* SIGUSR1: Waken by timer */
+    sigaction(SIGUSR1, &action, NULL);
 
-	/* And a SIGUSR2 handler to stop emulation when the window is closed */
-	action.sa_handler	= sigh_close;
-	action.sa_flags		= SA_RESTART;
-	sigemptyset(&action.sa_mask);
+    /* And a SIGUSR2 handler to stop emulation when the window is closed */
+    action.sa_handler = sigh_close;
+    action.sa_flags = SA_RESTART;
+    sigemptyset(&action.sa_mask);
 
-	/* SIGUSR2: Graphical window has been closed */
-	sigaction(SIGUSR2, &action, NULL);
+    /* SIGUSR2: Graphical window has been closed */
+    sigaction(SIGUSR2, &action, NULL);
 
-	//---
-	//	Emulate the provided program
-	//---
+    //---
+    //	Emulate the provided program
+    //---
 
-	/* Parse command-line arguments */
-	opt_t opt;
-	parse_args(argc, argv, &opt);
+    /* Parse command-line arguments */
+    opt_t opt;
+    parse_args(argc, argv, &opt);
 
-	/* Check that a filename was provided */
-	if(argc == 1 || opt.help) help((const char **)argv);
-	if(!opt.filename) fatal("no input file");
+    /* Check that a filename was provided */
+    if (argc == 1 || opt.help) help((const char **) argv);
+    if (!opt.filename) fatal("no input file");
 
-	/* Default the screen scale to 2 */
-	if(!opt.scale) opt.scale = 2;
+    /* Default the screen scale to 2 */
+    if (!opt.scale) opt.scale = 2;
 
-	/* Allocate a virtual memory and load the program into it */
-	mem = memory_new(opt.text, opt.stack, opt.data, opt.vram);
+    /* Allocate a virtual memory and load the program into it */
+    mem = memory_new(opt.text, opt.stack, opt.data, opt.vram);
 
-	/* Heed for both text and binary programs */
-	opt.textprog
-		? memory_load_text(mem, opt.filename)
-		: memory_load_program(mem, opt.filename);
+    /* Heed for both text and binary programs */
+    opt.textprog
+    ? memory_load_text(mem, opt.filename)
+    : memory_load_program(mem, opt.filename);
 
-	/* Load an additional file if requested */
-	if(opt.load_file)
-	{
-		int x = memory_load_file(mem, opt.load_addr, opt.load_file);
-		if(x) return 1;
-	}
+    /* Load an additional file if requested */
+    if (opt.load_file)
+    {
+        int x = memory_load_file(mem, opt.load_addr, opt.load_file);
+        if (x) return 1;
+    }
 
-	/* Create a CPU and give it the memory */
-	cpu = cpu_new(mem);
+    /* Create a CPU and give it the memory */
+    cpu = cpu_new(mem);
 
-	/* It's show time! */
+    /* It's show time! */
 
-	if(opt.graphical)
-	{
-		void *vram = (void *)mem->mem + (mem->vram >> 3);
-		uint scale = opt.scale;
-		int result = !opt.chip8
-			? graphical_start(160, 128, vram, NULL, NULL, scale)
-			: graphical_start(64, 32, vram, chip8, cpu, scale);
-		if(result) return 1;
-	}
+    if (opt.graphical)
+    {
+        void *vram = (void *) mem->mem + (mem->vram >> 3);
+        uint scale = opt.scale;
+        int result = !opt.chip8
+                     ? graphical_start(160, 128, vram, NULL, NULL, scale)
+                     : graphical_start(64, 32, vram, chip8, cpu, scale);
+        if (result) return 1;
+    }
 
-	if(!opt.debugger)
-	{
-		while(cpu->ptr[PC] < mem->text && !cpu->h && !cpu->s)
-			cpu_execute(cpu);
+    if (!opt.debugger)
+    {
+        while (cpu->ptr[PC] < mem->text && !cpu->h && !cpu->s)
+            cpu_execute(cpu);
 
-		puts("At end of execution:");
-		cpu_dump(cpu, stdout);
+        puts("At end of execution:");
+        cpu_dump(cpu, stdout);
 
-		/* In run mode, the execution may stop very quickly; leave the
-		   window open until the user closes it.
-		   Do it only if the windows has not already been closed by the
-		   user (which whould result in cpu->s = 1) */
-		if(opt.graphical && !cpu->s)
-		{
-			graphical_freeze();
-			puts("\nThe program will exit when you close the "
-				"graphical window.");
-			graphical_wait();
-		}
-	}
-	else
-	{
-		debugger(opt.filename, cpu);
+        /* In run mode, the execution may stop very quickly; leave the
+           window open until the user closes it.
+           Do it only if the windows has not already been closed by the
+           user (which whould result in cpu->s = 1) */
+        if (opt.graphical && !cpu->s)
+        {
+            graphical_freeze();
+            puts("\nThe program will exit when you close the "
+                         "graphical window.");
+            graphical_wait();
+        }
+    }
+    else
+    {
+        debugger(opt.filename, cpu);
 
-		/* By contrast, the debugger mode can only end when the user
-		   explicitly requires it, so close the window immediately */
-		graphical_stop();
-	}
+        /* By contrast, the debugger mode can only end when the user
+           explicitly requires it, so close the window immediately */
+        graphical_stop();
+    }
 
     if (opt.stats)
         print_stats();
 
-	return 0;
+    return 0;
 }
