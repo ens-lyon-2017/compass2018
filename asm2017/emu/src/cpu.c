@@ -61,11 +61,11 @@ static size_t counts[DISASM_INS_COUNT] = { 0 };
 */
 static uint instruction_bits_count = 0;
 
-// The number of bits read with `readse` and `readze` instructions.
+/* Number of bits read by `readse` and `readze` */
 static uint read_bits_count = 0;
-// The number of bits written with the `write` instructions.
+/* Number of bits written by `write` */
 static uint write_bits_count = 0;
-// The number of bits communicated with `getctr` and `setctr` instructions.
+/* Number of bits exchanged during calls to `getctr` and `setctr` */
 static uint ctr_access_bits_count = 0;
 
 /*
@@ -215,9 +215,10 @@ static void readze(cpu_t *cpu)
 	uint ptr = get(pointer), size = get(size), rd = get(reg);
 	cpu->r[rd] = memory_read(cpu->mem, cpu->ptr[ptr], size);
 	cpu->ptr[ptr] += size;
-    if (ptr == PC)
-        instruction_bits_count -= size;
-    read_bits_count += size;
+
+	/* Balance the automatic instruction bit count of cpu_execute() */
+	if(ptr == PC) instruction_bits_count -= size;
+	read_bits_count += size;
 }
 
 static void readse(cpu_t *cpu)
@@ -226,9 +227,10 @@ static void readse(cpu_t *cpu)
 	uint64_t data = memory_read(cpu->mem, cpu->ptr[ptr], size);
 	cpu->r[rd] = sign_extend(data, size);
 	cpu->ptr[ptr] += size;
-    if (ptr == PC)
-        instruction_bits_count -= size;
-    read_bits_count += size;
+
+	/* Balance the automatic instruction bit count of cpu_execute() */
+	if(ptr == PC) instruction_bits_count -= size;
+	read_bits_count += size;
 }
 
 static void jump(cpu_t *cpu)
@@ -238,11 +240,10 @@ static void jump(cpu_t *cpu)
 
 	int64_t diff = get(addr, NULL);
 
-    // `instruction_bits_counts` is always incremented by the difference
-    // between PC before having read the instruction and after having
-    // executed it. In order not to count the jump in the bits exchanged,
-    // instruction_bits_count is decremented by diff.
-    instruction_bits_count -= diff;
+	/* Deduce "diff" bits from the statistics to balance the increment
+	   performed by cpu_execute() */ 
+	instruction_bits_count -= diff;
+
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -261,7 +262,11 @@ static void jumpif(cpu_t *cpu)
 	int64_t diff = get(addr, NULL);
 
 	if(!conds[cnd]) return;
-    instruction_bits_count -= diff;
+
+	/* Deduce "diff" bits from the statistics to balance the increment
+	   performed by cpu_execute() */
+	instruction_bits_count -= diff;
+
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -302,9 +307,10 @@ static void _write(cpu_t *cpu)
 	uint ptr = get(pointer), size = get(size), rs = get(reg);
 	memory_write(cpu->mem, cpu->ptr[ptr], cpu->r[rs], size);
 	cpu->ptr[ptr] += size;
-    if (ptr == PC)
-        instruction_bits_count -= size;
-    write_bits_count += 64;
+
+	/* Balance the automatic instruction bit count of cpu_execute() */
+	if(ptr == PC) instruction_bits_count -= size;
+	write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -314,18 +320,21 @@ static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
 	cpu->r[7] = cpu->ptr[PC];
-    instruction_bits_count -= target - cpu->ptr[PC];
+
+	/* This is a jump, so we also need to correct the statistics */
+	instruction_bits_count -= target - cpu->ptr[PC];
 	cpu->ptr[PC] = target;
 }
 
 static void setctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rs = get(reg);
-    if (ptr == PC)
-        instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
+
+	if(ptr == PC) instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
 	cpu->ptr[ptr] = cpu->r[rs];
 
-    ctr_access_bits_count += 64;
+	/* Changes to the counters must be passed on to the memory */
+	ctr_access_bits_count += 64;
 
 	/* Let the debugger know about this counter change */
 	cpu->t = 1;
@@ -336,9 +345,9 @@ static void getctr(cpu_t *cpu)
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
  
-    // The size of a word is 64 bits, so when requested to read an address,
-    // 64 bits are sent from the memory to the processor.
-    ctr_access_bits_count += 64;
+	/* Word size if 64 bits here, so getctr always fetches a full 64 bits
+	   from memory */
+	ctr_access_bits_count += 64;
 }
 
 static void push(cpu_t *cpu)
@@ -351,7 +360,7 @@ static void push(cpu_t *cpu)
 		"at PC = %lu\n", cpu->ptr[SP], cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
 
-    write_bits_count += 64;
+	write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -359,7 +368,9 @@ static void push(cpu_t *cpu)
 
 static void _return(cpu_t *cpu)
 {
-    instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
+	/* Cancel out the yet-to-happen automatic increase */
+	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
+
 	cpu->ptr[PC] = cpu->r[7];
 }
 
@@ -520,9 +531,7 @@ void cpu_dump(cpu_t *cpu, FILE *stream)
 /* cpu_execute() -- read an execute an instruction */
 void cpu_execute(cpu_t *cpu)
 {
-    // The PC before reading the instruction.
-    uint pc_init = cpu->ptr[PC];
-
+	uint pc_init = cpu->ptr[PC];
 	uint opcode = disasm_opcode(cpu->mem, &cpu->ptr[PC], NULL);
 
 	/* Provide statistics about the number of executed instructions */
@@ -530,17 +539,11 @@ void cpu_execute(cpu_t *cpu)
 
 	instructions[opcode](cpu);
 
-    // The number of instruction bits is always incremented by the
-    // difference between the PC at the begining and the end of the
-    // instruction.
-    // If an instruction modifies the PC (such as `jump`), this modification
-    // is substracted during the execution of this instruction.
-    instruction_bits_count += cpu->ptr[PC] - pc_init;
-
-//	for(int i = 0; i < 8; i++)
-//	{
-//		cpu->r[i] = (((int64_t)cpu->r[i]) << 32) >> 32;
-//	}
+	/* Automatically increase the number of instruction bits by the
+	   difference between the values of PC before and after executing the
+	   instructions.
+	   Instructions that affect PC (jumps...) balance this manually */
+	instruction_bits_count += cpu->ptr[PC] - pc_init;
 }
 
 /* cpu_counts() -- statistics about executed instructions */

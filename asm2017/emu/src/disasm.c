@@ -2,7 +2,6 @@
 #include <util.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <bits/types/FILE.h>
 #include <stdio.h>
 
 #define    r4(n)    n, n, n, n
@@ -54,11 +53,12 @@ static const char instructions[37][16] = {
 */
 #define INSTR_INFORMATION_BITS (6)
 
-/* loa_encoding() -- Take the path of the huffman encoding and load it. if filename is null then load the default one
-    return non zero if it fails */
+/* load_encoding() -- load a huffman encoding as instruction set
+   Loads the default encoding if "filename" is NULL. Returns non-zero
+   on failure */
 uint load_encoding(const char *filename)
 {
-    /* If filename is not null we load the associated file et build the encoding */
+    /* If filename is not null we load the associated file and build the encoding */
     if (filename)
     {
         FILE *huffman_f = fopen(filename, "r");
