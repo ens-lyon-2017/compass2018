@@ -386,6 +386,8 @@ void chip8(const uint8_t *keyboard, void *arg)
 */
 void print_stats(void)
 {
+    size_t *counts = cpu_counts();
+    uint executed_instructions = 0;
     uint64_t instr_bits = cpu_instruction_bits_count();
     uint64_t read_bits = cpu_read_bits_count();
     uint64_t write_bits = cpu_write_bits_count();
@@ -393,6 +395,25 @@ void print_stats(void)
 
     uint64_t data_exchange = instr_bits + read_bits + write_bits + \
                          ctr_access_bits;
+
+    printf("\n----------------------");
+    printf("\nExecuted Instructions:\n");
+    printf("----------------------\n\n");
+    printf("Name   | Number of Executions | Proportion\n\n");
+
+    int id;
+    for (id = 0; id < DISASM_INS_COUNT; id++)
+        executed_instructions += counts[id];
+ 
+    for (id = 0; id < DISASM_INS_COUNT; id++) {
+        if (counts[id] == 0)
+            // Don't need to display instructions that are never executed.
+            continue;
+        double proportion = (100.0 * counts[id]) / executed_instructions;
+        printf("%6s | %20d | %.1f%%\n", disasm_instruction_name(id),
+               counts[id], proportion);
+    }
+    printf("Total  | %20d | 100.0%%\n", executed_instructions);
 
     printf("\n-----------------------------------------------\n");
     printf("Exchanges between the Memory and the Processor:\n");
