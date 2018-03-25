@@ -304,6 +304,7 @@ static void _write(cpu_t *cpu)
 	cpu->ptr[ptr] += size;
     if (ptr == PC)
         instruction_bits_count -= size;
+    write_bits_count += 64;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -356,6 +357,7 @@ static void push(cpu_t *cpu)
 
 static void _return(cpu_t *cpu)
 {
+    instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 	cpu->ptr[PC] = cpu->r[7];
 }
 
