@@ -263,6 +263,9 @@ void quit(void)
 {
 	if(cpu) cpu_destroy(cpu);
 	if(mem) memory_destroy(mem);
+
+    /* free the instr set array if needed */
+    free_encoding();
 }
 
 /*
