@@ -62,6 +62,9 @@ typedef enum
 */
 uint load_encoding(const char *filename);
 
+/* free_encoding() -- free if needed instruction set array */
+void free_encoding();
+
 //---
 //	Disassembler functions
 //
