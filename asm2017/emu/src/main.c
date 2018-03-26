@@ -231,7 +231,7 @@ const char *help_string =
 "  --geometry <text>:<stack>:<data>:<vram>\n"
 "                     Set the size of the four memory segments ('k' or 'M'\n"
 "                     suffixes may be used)\n"
-"  --load <file>:<address>\n"
+"  --load <address>:<file>\n"
 "                     Load the requested file at the given address before\n"
 "                     starting emulation (address should be a multiple of 8)\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
