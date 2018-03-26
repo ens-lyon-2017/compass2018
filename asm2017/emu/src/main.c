@@ -33,6 +33,7 @@ typedef struct
 	uint debugger	:1;
 	uint graphical	:1;
 	uint stats	:1;
+	uint instr_counts	:1;
 	uint help	:1;
 	uint chip8	:1;
 	uint textprog	:1;
@@ -143,6 +144,9 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->graphical = 1;
 		else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
 			opt->stats = 1;
+		else if(!strcmp(arg, "-i") ||
+			!strcmp(arg, "--instruction-counts"))
+			opt->instr_counts = 1;
 
 		/* Memory geometry */
 		else if(!strcmp(arg, "--geometry"))
@@ -411,6 +415,25 @@ void print_stats(void)
 }
 
 /*
+	print_instr_counts() -- print the number of times each instruction has
+	been executed.
+
+	The format is: for each instruction, a line
+	`[id] [mnemonic] [count]` with
+	- id:	the id of the instruction, from 0 to DISASM_INS_COUNT - 1
+	- mnemonic:	the string giving the name of the instruction
+	- count:	the number of times the instruction has been executed
+*/
+void print_instr_counts(void)
+{
+	size_t *counts = cpu_counts();
+	int i;
+	for (i = 0; i < DISASM_INS_COUNT; i++)
+		printf("%d %s %ld\n",
+			i, disasm_instruction_name(i), counts[i]);
+}
+
+/*
 	main()
 	In a normal execution flow, parses the command-line arguments, creates
 	a virtual CPU and memory, loads the provided file into memory, then
@@ -544,6 +567,7 @@ int main(int argc, char **argv)
 	}
 
 	if(opt.stats) print_stats();
+	if(opt.instr_counts) print_instr_counts();
 
 	return 0;
 }
