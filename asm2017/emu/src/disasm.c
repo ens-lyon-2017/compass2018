@@ -25,7 +25,7 @@ static uint8_t length[37] = {
 static uint opcode_size = 7;
 static uint8_t *ids;
 /* Record if we have to manually free array pointed by ids */
-static uint8_t inst_set_dynamic_alloc = 0;
+static uint8_t instr_set_dynamic_alloc = 0;
 
 
 /* Instruction set. The entry at each unique id represents the associated
@@ -67,6 +67,7 @@ uint load_encoding(const char *filename)
 
             /* Allocate an array able to store any opcode */
             ids = (uint8_t *) malloc(sizeof(uint8_t) * (1 << opcode_size));
+            instr_set_dynamic_alloc = 1;
 
             char mnemonic[64];
             uint iid;
@@ -104,7 +105,7 @@ uint load_encoding(const char *filename)
 /* free_encoding() -- free if needed instruction set array */
 void free_encoding()
 {
-    if(inst_set_dynamic_alloc)
+    if(instr_set_dynamic_alloc)
         free(ids);
 }
 
