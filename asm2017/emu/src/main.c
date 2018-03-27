@@ -400,10 +400,10 @@ void print_stats(void)
 	uint64_t read_bits = cpu_read_bits_count();
 	uint64_t write_bits = cpu_write_bits_count();
 	uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
-	uint64_t return_bits = cpu_return_bits_count();
+	uint64_t call_return_bits = cpu_call_return_bits_count();
 
 	uint64_t data_exchange = instr_bits + read_bits + write_bits +
-		ctr_access_bits + return_bits;
+		ctr_access_bits + call_return_bits;
 
 	printf("\n-----------------------------------------------\n");
 	printf("Exchanges between the Memory and the Processor:\n");
@@ -417,8 +417,8 @@ void print_stats(void)
 		(100.0 * write_bits) / data_exchange);
 	printf(" Get/Set Counters |   %12ld | %.1f%%\n", ctr_access_bits,
 		(100.0 * ctr_access_bits) / data_exchange);
-	printf(" Return           |   %12ld | %.1f%%\n", return_bits,
-		(100.0 * return_bits) / data_exchange);
+	printf(" Call/Return      |   %12ld | %.1f%%\n", call_return_bits,
+		(100.0 * call_return_bits) / data_exchange);
 	printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
 }
 

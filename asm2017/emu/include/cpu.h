@@ -120,6 +120,6 @@ uint cpu_ctr_access_bits_count(void);
    cpu_return_bits_count() -- statistics about the number of bits
    sent to the memory when executing `return` instructions.
  */
-uint cpu_return_bits_count(void);
+uint cpu_call_return_bits_count(void);
 
 #endif	/* CPU_H */

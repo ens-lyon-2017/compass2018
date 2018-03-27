@@ -68,7 +68,7 @@ static uint write_bits_count = 0;
 /* Number of bits exchanged during calls to `getctr` and `setctr` */
 static uint ctr_access_bits_count = 0;
 /* Number of bits sent to the memroy when executing `return` */
-static uint return_bits_count = 0;
+static uint call_return_bits_count = 0;
 
 /*
 	set_flags()
@@ -326,6 +326,8 @@ static void call(cpu_t *cpu)
 	/* This is a jump, so we also need to correct the statistics */
 	instruction_bits_count -= target - cpu->ptr[PC];
 	cpu->ptr[PC] = target;
+
+	call_return_bits_count += 64;
 }
 
 static void setctr(cpu_t *cpu)
@@ -377,7 +379,7 @@ static void _return(cpu_t *cpu)
 
 	/* The 64 bits from r7 indicating the value of the new PC are sent */
 	/* the memory. */
-	return_bits_count += 64;
+	call_return_bits_count += 64;
 }
 
 static void add3(cpu_t *cpu)
@@ -578,7 +580,7 @@ uint cpu_ctr_access_bits_count(void)
 	return ctr_access_bits_count;
 }
 
-uint cpu_return_bits_count(void)
+uint cpu_call_return_bits_count(void)
 {
-	return return_bits_count;
+	return call_return_bits_count;
 }
