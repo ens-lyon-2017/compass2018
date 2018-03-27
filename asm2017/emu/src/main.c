@@ -37,6 +37,7 @@ typedef struct
 	uint help	:1;
 	uint chip8	:1;
 	uint textprog	:1;
+	uint state	:1;
 	uint scale;
 
 	struct {
@@ -147,6 +148,8 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 		else if(!strcmp(arg, "-i") ||
 			!strcmp(arg, "--instruction-counts"))
 			opt->instr_counts = 1;
+		else if (!strcmp(arg, "--state"))
+			opt->state = 1;
 
 		/* Memory geometry */
 		else if(!strcmp(arg, "--geometry"))
@@ -239,6 +242,8 @@ const char *help_string =
 "                     Load the requested file at the given address before\n"
 "                     starting emulation (address should be a multiple of 8)\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
+"  --state            Print the state of the processor at the end of the\n"
+"                     execution.\n"
 ;
 
 /* Emulated memory and CPU */
@@ -545,8 +550,11 @@ int main(int argc, char **argv)
 		while(cpu->ptr[PC] < mem->text && !cpu->h && !cpu->s)
 			cpu_execute(cpu);
 
-		puts("At end of execution:");
-		cpu_dump(cpu, stdout);
+		if (opt.state)
+		{
+			puts("At end of execution:");
+			cpu_dump(cpu, stdout);
+		}
 
 		/* In run mode, the execution may stop very quickly; leave the
 		   window open until the user closes it.
