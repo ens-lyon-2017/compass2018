@@ -67,6 +67,8 @@ static uint read_bits_count = 0;
 static uint write_bits_count = 0;
 /* Number of bits exchanged during calls to `getctr` and `setctr` */
 static uint ctr_access_bits_count = 0;
+/* Number of bits sent to the memroy when executing `return` */
+static uint return_bits_count = 0;
 
 /*
 	set_flags()
@@ -372,6 +374,10 @@ static void _return(cpu_t *cpu)
 	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 
 	cpu->ptr[PC] = cpu->r[7];
+
+	/* The 64 bits from r7 indicating the value of the new PC are sent */
+	/* the memory. */
+	return_bits_count += 64;
 }
 
 static void add3(cpu_t *cpu)
@@ -554,20 +560,25 @@ size_t *cpu_counts(void)
 
 uint cpu_instruction_bits_count(void)
 {
-    return instruction_bits_count;
+	return instruction_bits_count;
 }
 
 uint cpu_read_bits_count(void)
 {
-    return read_bits_count;
+	return read_bits_count;
 }
 
 uint cpu_write_bits_count(void)
 {
-    return write_bits_count;
+	return write_bits_count;
 }
 
 uint cpu_ctr_access_bits_count(void)
 {
-    return ctr_access_bits_count;
+	return ctr_access_bits_count;
+}
+
+uint cpu_return_bits_count(void)
+{
+	return return_bits_count;
 }
