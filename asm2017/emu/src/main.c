@@ -234,6 +234,9 @@ const char *help_string =
 "  --load <file>:<address>\n"
 "                     Load the requested file at the given address before\n"
 "                     starting emulation (address should be a multiple of 8)\n"
+
+"  -lh | --load-huffman <huffman file>\n"
+"                     Load the requested instruction set\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
 ;
 
