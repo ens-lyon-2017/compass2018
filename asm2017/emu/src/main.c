@@ -33,9 +33,11 @@ typedef struct
 	uint debugger	:1;
 	uint graphical	:1;
 	uint stats	:1;
+	uint instr_counts	:1;
 	uint help	:1;
 	uint chip8	:1;
 	uint textprog	:1;
+	uint state	:1;
 	uint scale;
 
 	struct {
@@ -143,6 +145,11 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->graphical = 1;
 		else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
 			opt->stats = 1;
+		else if(!strcmp(arg, "-i") ||
+			!strcmp(arg, "--instruction-counts"))
+			opt->instr_counts = 1;
+		else if (!strcmp(arg, "--state"))
+			opt->state = 1;
 
 		/* Memory geometry */
 		else if(!strcmp(arg, "--geometry"))
@@ -231,13 +238,15 @@ const char *help_string =
 "  --geometry <text>:<stack>:<data>:<vram>\n"
 "                     Set the size of the four memory segments ('k' or 'M'\n"
 "                     suffixes may be used)\n"
-"  --load <file>:<address>\n"
+"  --load <address>:<file>\n"
 "                     Load the requested file at the given address before\n"
 "                     starting emulation (address should be a multiple of 8)\n"
 
 "  -lh | --load-huffman <huffman file>\n"
 "                     Load the requested instruction set\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
+"  --state            Print the state of the processor at the end of the\n"
+"                     execution.\n"
 ;
 
 /* Emulated memory and CPU */
@@ -394,9 +403,11 @@ void print_stats(void)
 	uint64_t read_bits = cpu_read_bits_count();
 	uint64_t write_bits = cpu_write_bits_count();
 	uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
+	uint64_t call_return_bits = cpu_call_return_bits_count();
+    uint64_t jump_bits = cpu_jump_bits_count();
 
 	uint64_t data_exchange = instr_bits + read_bits + write_bits +
-		ctr_access_bits;
+		ctr_access_bits + call_return_bits + jump_bits;
 
 	printf("\n-----------------------------------------------\n");
 	printf("Exchanges between the Memory and the Processor:\n");
@@ -410,7 +421,30 @@ void print_stats(void)
 		(100.0 * write_bits) / data_exchange);
 	printf(" Get/Set Counters |   %12ld | %.1f%%\n", ctr_access_bits,
 		(100.0 * ctr_access_bits) / data_exchange);
-	printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
+	printf(" Call/Return      |   %12ld | %.1f%%\n", call_return_bits,
+		(100.0 * call_return_bits) / data_exchange);
+	printf(" Jump             |   %12ld | %.1f%%\n", jump_bits,
+		(100.0 * jump_bits) / data_exchange);
+printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
+}
+
+/*
+	print_instr_counts() -- print the number of times each instruction has
+	been executed.
+
+	The format is: for each instruction, a line
+	`[id] [mnemonic] [count]` with
+	- id:	the id of the instruction, from 0 to DISASM_INS_COUNT - 1
+	- mnemonic:	the string giving the name of the instruction
+	- count:	the number of times the instruction has been executed
+*/
+void print_instr_counts(void)
+{
+	size_t *counts = cpu_counts();
+	int i;
+	for (i = 0; i < DISASM_INS_COUNT; i++)
+		printf("%d %s %ld\n",
+			i, disasm_instruction_name(i), counts[i]);
 }
 
 /*
@@ -522,8 +556,11 @@ int main(int argc, char **argv)
 		while(cpu->ptr[PC] < mem->text && !cpu->h && !cpu->s)
 			cpu_execute(cpu);
 
-		puts("At end of execution:");
-		cpu_dump(cpu, stdout);
+		if (opt.state)
+		{
+			puts("At end of execution:");
+			cpu_dump(cpu, stdout);
+		}
 
 		/* In run mode, the execution may stop very quickly; leave the
 		   window open until the user closes it.
@@ -547,6 +584,7 @@ int main(int argc, char **argv)
 	}
 
 	if(opt.stats) print_stats();
+	if(opt.instr_counts) print_instr_counts();
 
 	return 0;
 }

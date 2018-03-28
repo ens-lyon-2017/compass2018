@@ -67,6 +67,11 @@ static uint read_bits_count = 0;
 static uint write_bits_count = 0;
 /* Number of bits exchanged during calls to `getctr` and `setctr` */
 static uint ctr_access_bits_count = 0;
+/* Number of bits sent to the memroy when executing `return` */
+static uint call_return_bits_count = 0;
+/* Each time a jump is executed, the number of bits sent to the memory to
+   give the new PC. */
+static uint jump_bits_count = 0;
 
 /*
 	set_flags()
@@ -243,6 +248,7 @@ static void jump(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */ 
 	instruction_bits_count -= diff;
+    jump_bits_count += 64;
 
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
@@ -266,6 +272,7 @@ static void jumpif(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
+    jump_bits_count += 64;
 
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
@@ -324,6 +331,8 @@ static void call(cpu_t *cpu)
 	/* This is a jump, so we also need to correct the statistics */
 	instruction_bits_count -= target - cpu->ptr[PC];
 	cpu->ptr[PC] = target;
+
+	call_return_bits_count += 64;
 }
 
 static void setctr(cpu_t *cpu)
@@ -344,10 +353,6 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
- 
-	/* Word size if 64 bits here, so getctr always fetches a full 64 bits
-	   from memory */
-	ctr_access_bits_count += 64;
 }
 
 static void push(cpu_t *cpu)
@@ -372,6 +377,10 @@ static void _return(cpu_t *cpu)
 	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 
 	cpu->ptr[PC] = cpu->r[7];
+
+	/* The 64 bits from r7 indicating the value of the new PC are sent */
+	/* the memory. */
+	call_return_bits_count += 64;
 }
 
 static void add3(cpu_t *cpu)
@@ -554,20 +563,30 @@ size_t *cpu_counts(void)
 
 uint cpu_instruction_bits_count(void)
 {
-    return instruction_bits_count;
+	return instruction_bits_count;
 }
 
 uint cpu_read_bits_count(void)
 {
-    return read_bits_count;
+	return read_bits_count;
 }
 
 uint cpu_write_bits_count(void)
 {
-    return write_bits_count;
+	return write_bits_count;
 }
 
 uint cpu_ctr_access_bits_count(void)
 {
-    return ctr_access_bits_count;
+	return ctr_access_bits_count;
+}
+
+uint cpu_call_return_bits_count(void)
+{
+	return call_return_bits_count;
+}
+
+uint cpu_jump_bits_count(void)
+{
+    return jump_bits_count;
 }

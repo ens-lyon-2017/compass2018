@@ -106,7 +106,7 @@ scalar_prod_loop:
 	readze a1 64 r1
 
 	push 64 r7
-	call multlibsum
+	add2i r0 0
 	pop 64 r7
 
 	getctr a1 r0
