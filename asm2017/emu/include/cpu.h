@@ -117,9 +117,15 @@ uint cpu_write_bits_count(void);
 uint cpu_ctr_access_bits_count(void);
 
 /*
-   cpu_return_bits_count() -- statistics about the number of bits
+   cpu_call_return_bits_count() -- statistics about the number of bits
    sent to the memory when executing `return` instructions.
  */
 uint cpu_call_return_bits_count(void);
+
+/*
+   cpu_jumpcount() -- statistics about the number of bits
+   sent to the memory when executing jump instructions.
+ */
+uint cpu_jump_bits_count(void);
 
 #endif	/* CPU_H */

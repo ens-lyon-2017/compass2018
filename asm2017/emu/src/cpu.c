@@ -69,6 +69,9 @@ static uint write_bits_count = 0;
 static uint ctr_access_bits_count = 0;
 /* Number of bits sent to the memroy when executing `return` */
 static uint call_return_bits_count = 0;
+/* Each time a jump is executed, the number of bits sent to the memory to
+   give the new PC. */
+static uint jump_bits_count = 0;
 
 /*
 	set_flags()
@@ -245,6 +248,7 @@ static void jump(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */ 
 	instruction_bits_count -= diff;
+    jump_bits_count += 64;
 
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
@@ -268,6 +272,7 @@ static void jumpif(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
+    jump_bits_count += 64;
 
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
@@ -348,10 +353,6 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
- 
-	/* Word size if 64 bits here, so getctr always fetches a full 64 bits
-	   from memory */
-	ctr_access_bits_count += 64;
 }
 
 static void push(cpu_t *cpu)
@@ -583,4 +584,9 @@ uint cpu_ctr_access_bits_count(void)
 uint cpu_call_return_bits_count(void)
 {
 	return call_return_bits_count;
+}
+
+uint cpu_jump_bits_count(void)
+{
+    return jump_bits_count;
 }
