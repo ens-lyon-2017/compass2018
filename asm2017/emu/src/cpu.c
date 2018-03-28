@@ -348,10 +348,6 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
- 
-	/* Word size if 64 bits here, so getctr always fetches a full 64 bits
-	   from memory */
-	ctr_access_bits_count += 64;
 }
 
 static void push(cpu_t *cpu)
