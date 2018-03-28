@@ -22,9 +22,31 @@
 # - An integer, representing the id of an item (the tree is a leaf).
 # - A 2-uple (l, r) with l and r two trees
 
+def balanced_tree(ids):
+    """Given a list of ids, create a balanced binary tree.
+
+    For each node, the difference in the number of leafs between the right son
+    and the left son is at most 1.
+    """
+    if len(ids) == 1:
+        return ids[0]
+
+    m = len(ids) // 2
+    return (balanced_tree(ids[:m]), balanced_tree(ids[m:]))
+
 def huffman_tree(weights):
     """Return a binary tree given a list of weights."""
-    subtrees = [(w, i) for (i, w) in enumerate(weights)]
+    leafs = [(w, i) for (i, w) in enumerate(weights)]
+
+    # Isolating the 0-weight ids.
+    zero_ids = [i for (w, i) in leafs if w == 0]
+    subtrees = [(w, i) for (w, i) in leafs if w != 0]
+    if zero_ids != []:
+        # If there are 0-weight ids, a balanced tree is created for those ids
+        # so that the final tree is as balanced as possible, while remaining
+        # optimal.
+        subtrees.append((0, balanced_tree(zero_ids)))
+
     while len(subtrees) > 1:
         subtrees.sort(key=lambda c: c[0], reverse=True)
         wr, right = subtrees.pop()
