@@ -165,7 +165,7 @@ def count_operations(c, it):
     return c
 
 
-def compile_asm(s, *, back_end=MemonicBackEnd, generate_tree=False, directory=".", filename=""):
+def compile_asm(s, *, back_end=MemonicBackEnd, generate_tree=False, directory=".", filename="", load_tree=""):
 
     # Start by translating .p to .ps
     for new, olds in possible_transition.items():
@@ -195,6 +195,20 @@ def compile_asm(s, *, back_end=MemonicBackEnd, generate_tree=False, directory=".
         with open("opcode.txt", "w+") as f:
             for opcode, memonic in hufftree.items():
                 f.write("{memonic} {opcode}\n".format(**locals()))
+
+    elif load_tree != "" and load_tree != None:
+        f = open(load_tree)
+        lines = f.readlines()
+        lines = lines[1:]
+
+        hufftree = {}
+        for l in lines:
+            tokens = l.split(" ")
+            hufftree[tokens[0]] = tokens[3]
+
+        f.close()
+        par = parser.run()
+
     else:
         par = parser.run()
         hufftree = default_opcode
