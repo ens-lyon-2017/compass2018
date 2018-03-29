@@ -112,6 +112,22 @@ static int vflow_add(int64_t x, int64_t y)
 	return ((x ^ y) >= 0) && ((x ^ (x + y)) < 0);
 }
 
+/*
+	When a counter is set the a new value, only the least significant bits
+	are sent. Return the number of bits that need to be sent to change
+	a counter in this way.
+*/
+uint sent_ctr_bits(uint64_t prev_val, uint64_t new_val)
+{
+	uint64_t diff = prev_val ^ new_val;
+	uint changes = 0;
+
+	for ( ; diff != 0; diff >>= 1)
+		changes++;
+
+	return changes;
+}
+
 /* A useful shorthand that calls disasm_*() functions */
 #define	get(type, ...) disasm_ ## type (cpu->mem, &cpu->ptr[PC], ##__VA_ARGS__)
 
@@ -248,8 +264,8 @@ static void jump(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */ 
 	instruction_bits_count -= diff;
-    jump_bits_count += 64;
 
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -272,8 +288,8 @@ static void jumpif(cpu_t *cpu)
 	/* Deduce "diff" bits from the statistics to balance the increment
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
-    jump_bits_count += 64;
 
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
@@ -326,13 +342,12 @@ static void _write(cpu_t *cpu)
 static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
+	call_return_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->r[7] = cpu->ptr[PC];
 
 	/* This is a jump, so we also need to correct the statistics */
 	instruction_bits_count -= target - cpu->ptr[PC];
 	cpu->ptr[PC] = target;
-
-	call_return_bits_count += 64;
 }
 
 static void setctr(cpu_t *cpu)
@@ -340,10 +355,11 @@ static void setctr(cpu_t *cpu)
 	uint ptr = get(pointer), rs = get(reg);
 
 	if(ptr == PC) instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
-	cpu->ptr[ptr] = cpu->r[rs];
 
 	/* Changes to the counters must be passed on to the memory */
-	ctr_access_bits_count += 64;
+	ctr_access_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
+
+	cpu->ptr[ptr] = cpu->r[rs];
 
 	/* Let the debugger know about this counter change */
 	cpu->t = 1;
@@ -376,11 +392,11 @@ static void _return(cpu_t *cpu)
 	/* Cancel out the yet-to-happen automatic increase */
 	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 
+	call_return_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->ptr[PC] = cpu->r[7];
 
 	/* The 64 bits from r7 indicating the value of the new PC are sent */
 	/* the memory. */
-	call_return_bits_count += 64;
 }
 
 static void add3(cpu_t *cpu)
