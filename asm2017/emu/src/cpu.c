@@ -33,6 +33,10 @@ cpu_t *cpu_new(memory_t *mem)
 	cpu->ptr[A0] = mem->data;
 	cpu->ptr[A1] = mem->vram;
 
+	/* Program Counter at beginning of instruction (this is an
+	   implementation facility, not a real register) */
+	cpu->IPC = cpu->ptr[PC];
+
 	return cpu;
 }
 
@@ -256,9 +260,6 @@ static void readse(cpu_t *cpu)
 
 static void jump(cpu_t *cpu)
 {
-	/* TODO - Not compatible with dynamic Huffman trees */
-	uint64_t instruction_base = cpu->ptr[PC] - 4;
-
 	int64_t diff = get(addr, NULL);
 
 	/* Deduce "diff" bits from the statistics to balance the increment
@@ -268,14 +269,11 @@ static void jump(cpu_t *cpu)
 	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
-	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
+	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
 }
 
 static void jumpif(cpu_t *cpu)
 {
-	/* TODO - Not compatible with dynamic Huffman trees */
-	uint64_t instruction_base = cpu->ptr[PC] - 4;
-
 	int conds[] = {
 		cpu->z, !cpu->z, !cpu->z && (cpu->n == cpu->v),
 		cpu->n != cpu->v, !cpu->c && !cpu->z, !cpu->c, cpu->c, cpu->v,
@@ -292,7 +290,7 @@ static void jumpif(cpu_t *cpu)
 	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
-	if(cpu->ptr[PC] == instruction_base) cpu->h = 1;
+	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
 }
 
 static void or2(cpu_t *cpu)
@@ -556,7 +554,7 @@ void cpu_dump(cpu_t *cpu, FILE *stream)
 /* cpu_execute() -- read an execute an instruction */
 void cpu_execute(cpu_t *cpu)
 {
-	uint pc_init = cpu->ptr[PC];
+	cpu->IPC = cpu->ptr[PC];
 	uint opcode = disasm_opcode(cpu->mem, &cpu->ptr[PC], NULL);
 
 	/* Provide statistics about the number of executed instructions */
@@ -568,7 +566,7 @@ void cpu_execute(cpu_t *cpu)
 	   difference between the values of PC before and after executing the
 	   instructions.
 	   Instructions that affect PC (jumps...) balance this manually */
-	instruction_bits_count += cpu->ptr[PC] - pc_init;
+	instruction_bits_count += cpu->ptr[PC] - cpu->IPC;
 }
 
 /* cpu_counts() -- statistics about executed instructions */

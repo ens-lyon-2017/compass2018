@@ -44,6 +44,9 @@ typedef struct
 	volatile uint sleep :1;	/* Current sleeping */
 
 	uint64_t ptr[4];	/* There are no pointers among r0..r7 */
+
+	uint64_t IPC;		/* PC at beginning of instruction (not a real
+				   register) */
 } cpu_t;
 
 /*
