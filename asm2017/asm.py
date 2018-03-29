@@ -45,6 +45,9 @@ if __name__ == "__main__":
     parser.add_argument('--huffman', action="store_true",
                         help="generate the huffman tree")
 
+    parser.add_argument('--loadhuffman',
+                        help="generate the huffman tree")
+
     args = parser.parse_args()
     with open(args.filename) as file:
         s = file.read()
@@ -62,7 +65,9 @@ if __name__ == "__main__":
         out = compile_asm(s, back_end=args.back_end,
                           generate_tree=args.huffman,
                           directory=directory,
-                          filename=args.filename)
+                          filename=args.filename,
+                          load_tree=args.loadhuffman
+                          )
 
         # print(args.output)
         # print(args.filename.rsplit(".", maxsplit=1))

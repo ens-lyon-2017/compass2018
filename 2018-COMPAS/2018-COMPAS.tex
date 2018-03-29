@@ -24,7 +24,7 @@
 
 \title{Une architecture minimisant les échanges\\ entre processeur et mémoire}
 
-\author{Florent de Dinechin, \\Yoann Coudert-Osmont, Maxime Darrin, Antonin Dudermel, Alban Reynaud}
+\author{Florent de Dinechin, \\Sébastien Michelland, Maxime Darrin, Antonin Dudermel, Alban Reynaud}
 
 \address{
   % \begin{tabular}{cc}
@@ -57,8 +57,83 @@ On arrive à une taille moyenne d'instruction entre 9 et 15 bits suivants les pr
 
 %=========================================================
 \section{Introduction et motivation}
-%=========================================================
+% =========================================================
+Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de von Neumann, interfacé à une mémoire par un bus d'adresse et un bus de données comme schématisé sur la figure~\ref{fig:mvn}.
 
+\newcommand{\figVonNeumann}{
+  \begin{tikzpicture}
+    \node[hwblock, minimum width=15ex,minimum height=15ex] (p) at (0,0)  {Processeur} ;
+    \node[hwblock, minimum width=15ex,minimum height=15ex] (m) at (30ex,0)  {Mémoire} ;
+    \draw[hwbus,->] (p.25) -- (m.155) node[midway,above=1ex]{adresse} node[midway]{/} node[midway, below right]{$w_a$};
+    \draw[hwbus,<->] (p.335) -- (m.205) node[midway,below]{données} node[midway]{/} node[midway, above left]{$w_d$};
+  \end{tikzpicture}
+}
+
+\begin{figure}[ht]
+  \begin{center}
+    \figVonNeumann
+  \end{center}
+  \caption{Une machine de von Neumann.}
+  \label{fig:mvn} \index{von Neumann}\index{machine de von Neumann}
+\end{figure}
+
+\subsection{Généralités}
+Le jeu d'instruction d'un processeur (Instruction Set Architecture ou ISA) reflète l'état de la loi de Moore à l'époque de sa conception.
+Celle-ci se traduit par exemple par un doublement de la quantité de mémoire intégrée sur une puce tous les deux ans.
+Comme il faut bien adresser cette mémoire, le bus mémoire suit, et sa taille ($w_a$ sur la figure) grandit donc d'un bit tous les deux ans.
+Ceci se traduit à son tour par une croissance de la taille des registres qui, dans un processeur, peuvent adresser la mémoire.
+Toutefois, ici, le fétichisme des architectes pour les puissances de 2 intervient, et on a observé une croissance de ces registres par palier: de 8 bits aux temps héroïques à 16 bits dans les années 70, 32 bits dans les années 80, et 64 bits dans les années 2000.
+Les adresses sur 64 bits devraient ainsi suffire pour plusieurs dizaines d'années, mais l'on se gardera bien de faire des pronostics si lointains.
+
+\iffalse % c'est fort intéressant mais on s'en fout
+La croissance du bus de données a suivi avec du retard, pour plusieurs raisons.
+La première est que la loi de Moore doit aussi fournir assez de transistors au processeur pour calculer sur des données de plus en plus grandes.
+Mais la complexité des principales opérations d'un processeur travaillant sur $n$ bits est en $n$, en $n\log n$ ou au pire en $n^2$: si l'on a pu être à l'étroit jusque dans les années 90 pour construire un processeur qui peut calculer sur des adresses mémoires, ce n'est plus le cas depuis.
+La seconde raison est que les ordinateurs servent beaucoup à travailler sur du texte, donc des octets.
+On a donc vu des processeurs très populaires 8/16 bits, c'est à dire $w_d=8$ et  $w_a = 16$: les z80, 6502, 8088; des processeurs 16/32 bits (68000, 80286 à 486); et même une variante 8/32 bits, le 68008. Puis l'industrie a convergé vers 32/32 avec l'arrivée des processeurs RISC  (SPARC,  ARM et Power)  puis et 64/64 avec AMD64 et ARM64.
+Ainsi,  
+De nos jours, les processeurs ont des registres de plusieurs centaines de bits (AMD64 SSE* puis AVX*, ARM Neon), encore une fois parce que la loi de Moore le permet.
+Mais ces registres sont des vecteurs de données d'au plus 64 bits.
+\fi
+
+
+
+Une question intéressante, et qui commence à toucher le jeu d'instruction, est l'adressabilité, c'est-à-dire la granularité à laquelle on peut adresser la mémoire.
+L'ancêtre 4004 adressait sa mémoire par cases de 4 bits, ce qui correspondait au besoin du décimal codé en binaire. Le processeur Saturn des calculettes HP était aussi un processeur 4/20 bits.
+La plupart des processeurs adressent leur mémoire par octet pour être efficace sur le traitement de texte.
+
+Cela dit, dans un processeur 32 bits, les données de 32 bits doivent avoir des adresses dites alignées, c'est à dire multiples de 4 octets. Un accès non aligné se traduit selon les ISA par une faute ou par un accès beaucoup plus lent.
+
+
+\subsection{Pourquoi pas l'adressabilité au bit près?}
+Ceci nous amène à la première constatation. Dès lors que les adresses font 64 bits, on peut parfaitement décider  que le adresses seront des adresses de bits.
+On perd un facteur 8 en quantité de mémoire adressable.
+Ce qui aurait été inacceptable à l'époque des adresses sur 16 bits est indolore pour quelques années avec un espace d'adressage sur 64 bits: il reste tout de même $2^{61}\approx 2.10^{18}$ bits, ou 2 exabits, à adresser.
+
+
+Attention, on parle de l'abstraction offerte par le jeu d'instruction, pas de l'interface physique.
+Les deux sont déjà différentes dans les processeurs actuels.
+Dans le jeu d'instruction AMD64, l'ISA définit une mémoire adressable par octet, avec des contraintes d'alignements pour les accès à des données plus grandes.
+Par contre l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
+
+Passer d'un adressage par octet à un adressage au bit complexifie légèrement l'interface processeur-cache.
+On peut estimer que cela ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
+Cela dit, dans tout cet article nous ignorons sereinement cette problématique.
+Nous ne remettrons les pieds sur terre que dans la discussion de conclusion.
+
+
+Mais que gagne-t-on à avoir une adresse pour chaque bit?  On peut manipuler des données au bit près.
+Surtout, on peut manipuler des données de taille variables au bit près.
+Comme domaine d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
+Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses principales motivations reste: les transferts de données sont extrêmement coûteux.
+D'après Dally, en technologie 28nm, le calcul d'une multiplication-addition flottante sur des données 64 bits coûte 50pJ, et l'accès aux registres sur puce est du même ordre de grandeur, alors qu'une lecture de 64 bits de la DRAM coûte 4000pJ.
+% TODO citation
+
+Il y a aussi des applications, comme les réseaux de neurones, qui se contentent très bien de données sur de très petites précision, voire des données binaires \cite{AndriCRB16,AlemdarEtAl2017:TernaryCNN,AmiriEtAl2018:mixedPrecCNN,Preusser:DATE2018:heteroCNN}. 
+
+\subsection{Pourquoi pas un jeu d'instruction au bit près?}
+
+...
 
 \section{Présentation du jeu d'instruction}
 \subsection{Registres généralistes}
@@ -124,7 +199,7 @@ Remarques en vrac:
 \begin{table}[!h]
   \caption{Liste des instructions.}
   \label{tab:opcodes}
-
+  Le codage de Huffmann des instructions est basée sur les statistiques des années précédentes.
   Les opérandes d'une instruction la suivent en mémoire. Ils sont encodés comme suit:
   \begin{itemize}
 \item \textit{reg} $\in \{\mathtt{r0}, \mathtt{r1}, ..., \mathtt{r7}\}$ et est encodé par le numéro du registre en binaire.
@@ -176,7 +251,7 @@ Remarques en vrac:
     \hline
     110101  & \texttt{call}   & \addr\                        & sub-routine call                                     & s    &             \\
     \hline
-    110110  & \texttt{setctr} & \ctr\ \reg\                   & set one of the four counters to the content of \reg\ &      &             \\
+    110110  & \texttt{setctr} & \ctr\ \reg\                   & store \reg\ to a counter                             &      &             \\
     \hline
     110111  & \texttt{getctr} & \ctr\ \reg\                   & copy the current value of a counter to \reg\         &      &             \\
     \hline
@@ -343,7 +418,6 @@ L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
     \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{SetCounter}};
     \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
     \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
-    \draw[hwwire,<-] (p.35) -- (m.145) node[midway,below]{\texttt{Dmp}};
     \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{Ck};
     \draw[hwwire,<-] (p.south) -- ++(0,-4ex);
     \draw[hwwire,-] (p.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
@@ -389,15 +463,93 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 \end{center}
 \end{table}
 
+\section{Coût des opérations}
+Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
+\begin{enumerate}
+\item les instructions du programme (code lu par le processeur).
+\item les données explicitement lues ou écrites (à l'aide de \texttt{readze}, par exemple)
+\item Les bits d'adresses (typiquement, l'affectation de compteurs)
+\end{enumerate}
 
+Par exemple, \texttt{push 32 r0} fait d'abord transiter $7$ bits de la mémoire au processeur pour l'opérande, $3$ pour le registre. L'instruction est lue. Il faudra ensuite faire reculer le pointeur de pile de $32$ bits : $64$ bits pour récupérer \texttt{sp}, $64$ autres pour l'affecter. Les $32$ bits de \texttt{r0} sont écrits, puis on fait de nouveau reculer le pointeur de pile : $64$ bits. Soit un total d'instructions lues de $10$, $32$ bits de lus, et $192$ bits de compteurs.
+La table \ref{tab:costs} résume le coût de chaque opération.
 
+\subsection{Combien de registres ?}
+Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions : doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions, avoir trop peu de registres oblige à utiliser fréquemment la pile. On peut {\it a priori} considérer que $4$ registres rend le processeur impraticable, et $16$ est sufisamment confortable pour programmer.\par
+Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux registres sans utiliser de registre intermédiaire ?), les élèves s'en sont sortis avec des statistiques de \texttt{push} raisonnables (inférieures à 1\% des instructions). On peut donc espérer avec un \texttt{push} efficace un gain optimal avec seulement 8 registres. Cependant, la pénurie de registres restant d'actualité, on peut penser qu'un gain serait fait avec, par exemple une fenêtre de registres comme sur le SPARC.
+
+\subsection{Bits de compteurs}
+\subsubsection{choix initiaux}
+On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
+Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-decrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
+\subsubsection{améliorations}
+La première amélioration, proposée dès le départ est de conserver une copie de chaque compteur dans le processeur. Ainsi, les échanges de bits de compteurs ne sont nécessaires que pour synchroniser les compteurs du processeur et de la mémoire : \texttt{getctr} ne coûte plus aucun bit de compteur, on a aussi un gain sur le \texttt{push}
+Ensuite, lors d'une affectation de compteurs, on n'est pas obligé d'écrire tous les bits s'ils sont envoyés poids faible d'abord. Si on envoie $n\leqslant 64$ bits à la mémoire, la mémoire peut écrire ces $n$ bits et remplire les $64-n$ autres avec des zéros. Cela diminuerait grandement le coût des affectations du pc, très proche du début de la mémoire (le code est stocké en \texttt{0x0}). Une autre idée, plus générale, serait de ne pas toucher aux $64-n$ derniers bits. On aurait un gain lors d'affectations proches en mémoire (même si bien sûr on ne peut rien garantir : \texttt{0x1000000 - 0x1 = 0xffffff})\par
+Une autre amélioration, non-implémentée, serait d'ajouter des instructions d'incrémentation des compteurs par un registre ou une constante. On remplacerait les trois instructions \texttt{getctr a0 r0 ; add2 r0 r1 ; setctr a0 r0} par l'unique \texttt{incrctr a0 r0}. Si on ne gagne pas sur le nombre de bits de compteurs échangés (toujours $64$), cette instruction est assez facile à implanter en machine, on factorise un trio d'instruction assez présent dans la boucle interne de nombreux programmes (par exemple la multiplication matricielle) en une seule, et on gagne un registre.
+
+\subsubsection{le problème de la pile}
+Si avec le post-incrément, le \texttt{pull} ne coûte rien, dans la version naïve, le push est extrêmement coûteux : \texttt{push 32 r0} fait d'abord transiter $7$ bits de la mémoire au processeur pour l'opérande, $3$ pour le registre. L'instruction est lue. Il faudra ensuite faire reculer le pointeur de pile de $32$ bits : $64$ bits pour récupérer \texttt{sp}, $64$ autres pour l'affecter. Les $32$ bits de \texttt{r0} sont écrits, puis on fait de nouveau reculer le pointeur de pile : $64$ bits. Soit un total d'instructions lues de $10$, $32$ bits de lus, et $192$ bits de compteurs.\par
+C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine la quantité de registres nécessaire. La première amélioration proposée permet de faire descendre le coût du \texttt{push} à 128 bits, et plus si on décide d'un endroit adéquat pour placer le fond de la pile. Cependant, un gain énorme serait d'autoriser l'écriture avec pré-décrément : en écrivant les bits un à un à l'envers et en pré-décrément sur sp, on n'a plus besoin d'affecter sp. Le nombre de bits d'adresse dus au push retomberait à 0. Une manière assez simple de l'implémenter et de faire transiter le sens d'écriture sur le fil \texttt{Read} : 0 indiquerait post-incrément, et 1 pré-décrément. On pourrait même alors imaginer un \texttt{push} prenant en argument un compteur. Ainsi, chaque compteur pourrait devenir une pile.
+
+\begin{table}[!h]
+  \caption{Coûts des opérations}
+  \label{tab:costs}
+  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
+  \begin{center}
+  \begin{tabular}{|l|c|c|c|}
+    \hline  
+    type  & instructions lues & données lues/écrites & compteurs \\
+    \hline  
+    \hline
+    \texttt{arith} \reg\ \reg\ &  $6$ & & \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \reg\ & $9$ & & \\
+    \hline
+    \texttt{arith} \reg\ \const\ & $3$ + \const & & \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const & & \\
+    \hline
+    \texttt{r/w} \ctr\ \size\ \reg & $2$ + \size\ + $3$ & \size & \\
+    \hline
+    \texttt{get-,setctr} \ctr\ \reg\ & $2$ + $3$ & & $64$ \\
+    \hline
+    \texttt{jump} & \addr\ & & $64$ \\
+    \hline
+    \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $64$\\
+    \hline
+    \texttt{call} \addr & \addr\ & & $64$\\
+    \hline
+    \texttt{return} & & & $64$\\
+    \hline
+    \texttt{push} \size\ \reg & $3$ & \size & $192$\\
+    \hline
+  \end{tabular}
+  \end{center}
+Après améliorations, on arrive à ce nouveau tableau :
+  \begin{center}
+    \begin{tabular}{|l|c|c|c|}
+      \hline  
+      type  & instructions lues & données lues/écrites & compteurs \\
+      \hline  
+      \hline
+      \texttt{getctr} \ctr\ \reg\ & $2$ + $3$ & & \\
+      \hline
+      \texttt{setctr} \ctr\ \reg\ & $2$ + $3$ & & $\leqslant 64$ \\
+      \hline
+      \texttt{jump} & \addr\ & & $\leqslant 64$ \\
+      \hline
+      \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $\leqslant 64$\\
+      \hline
+      \texttt{call} \addr & \addr\ & & $\leqslant 64$\\
+      \hline
+      \texttt{return} & & & $\leqslant64$\\
+      \hline
+      \texttt{push} \size\ \reg & $3$ & \size &\\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+  
+\bibliography{biblio.bib}
 
 \end{document}
-
-
-
-
-
-
-
-

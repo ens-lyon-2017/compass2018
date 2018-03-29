@@ -54,5 +54,5 @@ for i in range(1,NM):
     #treat the output
     data = str(output).split('\\n')
     print(str(i) + "; " +
-          "; ".join(list(map(lambda x:str(extract_num(x)),data[-7:-2]))))
+          "; ".join(list(map(lambda x:str(extract_num(x)),data[????]))))
     
