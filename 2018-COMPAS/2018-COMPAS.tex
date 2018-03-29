@@ -176,7 +176,7 @@ Remarques en vrac:
     \hline
     110101  & \texttt{call}   & \addr\                        & sub-routine call                                     & s    &             \\
     \hline
-    110110  & \texttt{setctr} & \ctr\ \reg\                   & set one of the four counters to the content of \reg\ &      &             \\
+    110110  & \texttt{setctr} & \ctr\ \reg\                   & store \reg\ to a counter                             &      &             \\
     \hline
     110111  & \texttt{getctr} & \ctr\ \reg\                   & copy the current value of a counter to \reg\         &      &             \\
     \hline
@@ -407,7 +407,7 @@ Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux re
 \subsection{Bits de compteurs}
 \subsubsection{choix initiaux}
 On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
-Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-incrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
+Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-decrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
 \subsubsection{améliorations}
 La première amélioration, proposée dès le départ est de conserver une copie de chaque compteur dans le processeur. Ainsi, les échanges de bits de compteurs ne sont nécessaires que pour synchroniser les compteurs du processeur et de la mémoire : \texttt{getctr} ne coûte plus aucun bit de compteurs, on a aussi un gain sur le \texttt{push}
 Ensuite, lors d'une affectation de compteurs, on n'est pas obligés d'écrire tous les bits s'ils sont envoyés poids faible d'abord. Si on envoie $n\leqslant 64$ bits à la mémoire, la mémoire peut écrire ces $n$ bits et remplire les $64-n$ autres avec des zéros. Cela diminuerait grandement le coût des affectations du pc, très proche du début de la mémoire (le code est stocké en \texttt{0x0}). Une autre idée, plus générale, serait de ne pas toucher aux $64-n$ derniers bits. On aurait un gain lors d'affectations proches en mémoire (même si bien sûr on ne peut rien garantir : \texttt{0x1000000 - 0x1 = 0xffffff})\par
