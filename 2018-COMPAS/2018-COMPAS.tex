@@ -471,7 +471,7 @@ Le coût intéressant de cette étude est le nombre de bits échangés sur les f
 \item Les bits d'adresses (typiquement, l'affectation de compteurs)
 \end{enumerate}
 
-Par exemple, \texttt{push 32 r0} fait d'abord transiter l'instruction de la mémoire au processeur: son code, puis  $3$ bits  pour encoder le 32 (encodage \emph{size} dans la table~\ref{tab:constantes}), puis $3$ pour le registre.
+Par exemple, \texttt{push 32 r0} fait d'abord transiter l'instruction de la mémoire au processeur: son opcode, puis  $3$ bits  pour encoder le 32 (encodage \emph{size} dans la table~\ref{tab:constantes}), puis $3$ pour le registre.
 Il faut ensuite faire reculer le pointeur de pile de $32$ bits, donc écrire jusquà $64$ bits pour envoyer la nouvelle valeur de \texttt{sp}.
 Les $32$ bits de \texttt{r0} sont écrits, puis on doit à nouveau  reculer le pointeur de pile : $64$ bits. Soit un total de bits d'instruction lus de $10$, $32$ bits de lus, et $128$ bits de compteurs.
 La table \ref{tab:costs} résume le coût de chaque opération.
@@ -496,11 +496,11 @@ C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine l
 \begin{table}[!h]
   \caption{Coûts des opérations}
   \label{tab:costs}
-  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
+  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
   \begin{center}
   \begin{tabular}{|l|c|c|c|}
     \hline  
-    type  & instructions lues & données lues/écrites & compteurs \\
+    type  & bits d'instruction & bits de données & bits de compteurs \\
     \hline  
     \hline
     \texttt{arith} \reg\ \reg\ &  $6$ & & \\
