@@ -241,7 +241,7 @@ La table \ref{tab:opcodes} décrit l'opcode qui commence chaque instruction.
 Remarques en vrac: 
 \begin{itemize}
 \item le not logique est implémenté par xor -1
-\item la direction du shift est encodée dans un bit après l'instruction pour économiser un opcode. On aurait pu définir deux opcodes comme pour \texttt{uread}/\texttt{sread} mais c'est plus rigolo de lire \texttt{shift left r1 1}.
+\item la direction du shift est encodée dans un bit après l'instruction pour économiser un opcode. On aurait pu définir deux opcodes comme pour \texttt{readze}/\texttt{readse} mais c'est plus rigolo de lire \texttt{shift left r1 1}.
 \end{itemize}
 
 
@@ -498,9 +498,7 @@ Le coût intéressant de cette étude est le nombre de bits échangés sur les f
 \item Les bits d'adresses (typiquement, l'affectation de compteurs)
 \end{enumerate}
 
-Par exemple, \texttt{push 32 r0} fait d'abord transiter l'instruction de la mémoire au processeur: son opcode, puis  $3$ bits  pour encoder le 32 (encodage \emph{size} dans la table~\ref{tab:constantes}), puis $3$ pour le registre.
-Il faut ensuite faire reculer le pointeur de pile de $32$ bits, donc écrire jusquà $64$ bits pour envoyer la nouvelle valeur de \texttt{sp}.
-Les $32$ bits de \texttt{r0} sont écrits, puis on doit à nouveau  reculer le pointeur de pile : $64$ bits. Soit un total de bits d'instruction lus de $10$, $32$ bits de lus, et $128$ bits de compteurs.
+Par exemple, \texttt{jump 0x1f68} va être lue par le processeur : $4$ bits plus $18$ bits (une constante sur $16$ bits), puis pc + \texttt{0x1f68} va être écrit dans le pc, $64$ bits vont donc transiter. On a donc un total de $22$ bits d'instruction, $0$ bit de données et $64$ bits de compteurs.
 La table \ref{tab:costs} résume le coût de chaque opération.
 
 \subsection{Combien de registres ?}
