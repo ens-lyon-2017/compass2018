@@ -20,6 +20,7 @@
 \newcommand{\size}{\textit{size}}
 \newcommand{\addr}{\textit{addr}}
 
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}}
 \begin{document}
 
 \title{Une architecture minimisant les échanges\\ entre processeur et mémoire}
@@ -127,15 +128,63 @@ Surtout, on peut manipuler des données de taille variables au bit près.
 Comme domaine d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
 Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses principales motivations reste: les transferts de données sont extrêmement coûteux.
 D'après Dally, en technologie 28nm, le calcul d'une multiplication-addition flottante sur des données 64 bits coûte 50pJ, et l'accès aux registres sur puce est du même ordre de grandeur, alors qu'une lecture de 64 bits de la DRAM coûte 4000pJ.
-% TODO citation
+\todo{F2D: citation}
 
 Il y a aussi des applications, comme les réseaux de neurones, qui se contentent très bien de données sur de très petites précision, voire des données binaires \cite{AndriCRB16,AlemdarEtAl2017:TernaryCNN,AmiriEtAl2018:mixedPrecCNN,Preusser:DATE2018:heteroCNN}. 
 
 \subsection{Pourquoi pas un jeu d'instruction au bit près?}
 
-...
+\todo{F2D}
 
-\section{Présentation du jeu d'instruction}
+\subsection{Contexte de ce travail}
+Résumé des objectifs pédagogiques du cours ASR1
+
+\todo{F2D}
+\subsection{Plan}
+
+\todo{F2D}
+
+
+\section{Présentation du jeu d'instruction initial}
+Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
+Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
+
+\subsection{Architecture générale et interface mémoire}
+
+\begin{figure}[h]
+  \caption{Overview of the processor-memory interface}
+  \label{fig:overview}
+    \begin{center}
+  \begin{tikzpicture}
+    \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {Processor} ;
+    \node[hwblock, minimum width=25ex,minimum height=25ex, align=center] (m) at (30ex,0)  {Serial\\ Memory} ;
+    
+    \draw (p.north west)  ++(4ex,-3ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{PC} ;
+    \draw (p.north west)  ++(4ex,-7ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{SP} ;
+    \draw (p.north west)  ++(4ex,-11ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A0} ;
+    \draw (p.north west)  ++(4ex,-15ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A1} ;
+    
+    \draw (m.north east)  ++(-4ex,-3ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{PC} ;
+    \draw (m.north east)  ++(-4ex,-7ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{SP} ;
+    \draw (m.north east)  ++(-4ex,-11ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A0} ;
+    \draw (m.north east)  ++(-4ex,-15ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A1} ;
+
+    \draw[hwwire,->] (p.40) -- (m.140) node[midway,above]{\texttt{Dpm}};
+    \draw[hwwire,<-] (p.35) -- (m.145) node[midway,below]{\texttt{Dmp}};
+
+    \draw[hwwire,->] (p.10) -- (m.170) node[midway,above]{\texttt{Read}};
+    \draw[hwwire,->] (p.355) -- (m.185) node[midway,above]{\texttt{Write}};
+    \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{SetCounter}};
+    \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
+    \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
+    \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{Ck};
+    \draw[hwwire,<-] (p.south) -- ++(0,-4ex);
+    \draw[hwwire,-] (p.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
+    \draw[hwwire,-] (m.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
+  \end{tikzpicture}
+  \end{center}
+\end{figure}
+
 \subsection{Registres généralistes}
 Dans cette expérience nous avons fixé le nombre de registres à 8.
 C'est un choix arbitraire et discutable, motivé par des raisons pédagogiques (rencontrer cette limite dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
@@ -143,10 +192,10 @@ C'est un choix arbitraire et discutable, motivé par des raisons pédagogiques (
 Les registres généralistes sont notés r0 à r7.
 Ils sont tous parfaitement identiques, sauf r7 qui reçoit l'adresse de retour en cas de \texttt{call}.
 
-\paragraph{Autocritique} Les architectures modernes offrent typiquement entre 16 et 64 registres.
+\paragraph*{Autocritique} Les architectures modernes offrent typiquement entre 16 et 64 registres.
 Elles offrent également des mécanismes qui exposent dans le jeu d'instruction un sous-ensemble des registres architecturaux, soit de manière explicite (les fenêtres de registres du SPARC), soit de manière implicite (le techniques de renommage qui permettent l'exécution superscalaire).
 
-On pourrait avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
+On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
 
 \subsection{Format général des mnémoniques}
 Les instructions commencent toutes par un mnémonique, suivi des opérandes, le tout séparé par des espaces.
@@ -183,7 +232,7 @@ boucle:
   jumpif nz boucle  ; encodé en 16 bits, signifie  jump -25 
 \end{verbatim}
 
-\subsection{Le jeu d'instructions et son encodage minimal}
+\subsection{Le jeu d'instructions et son encodage intial}
 
 
 
@@ -399,32 +448,6 @@ L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
 \subsection{Les instructions d'accès mémoire}
 \label{sec:mem}
 
-\begin{figure}[h]
-  \caption{Overview of the processor-memory interface}
-  \label{fig:overview}
-    \begin{center}
-  \begin{tikzpicture}
-    \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {Processor} ;
-    \node[hwblock, minimum width=25ex,minimum height=25ex, align=center] (m) at (30ex,0)  {Serial\\ Memory} ;
-    \node[hwblock,minimum height=3ex,minimum width=5ex] (pc) at (40ex,10ex)  {PC} ;
-    \node[hwblock,minimum height=3ex,minimum width=5ex] (pc) at (40ex,6ex)  {SP} ;
-    \node[hwblock,minimum height=3ex,minimum width=5ex] (pc) at (40ex,2ex)  {A0} ;
-    \node[hwblock,minimum height=3ex,minimum width=5ex] (pc) at (40ex,-2ex)  {A1} ;
-    \draw[hwwire,->] (p.40) -- (m.140) node[midway,above]{\texttt{Dpm}};
-    \draw[hwwire,<-] (p.35) -- (m.145) node[midway,below]{\texttt{Dmp}};
-
-    \draw[hwwire,->] (p.10) -- (m.170) node[midway,above]{\texttt{Read}};
-    \draw[hwwire,->] (p.355) -- (m.185) node[midway,above]{\texttt{Write}};
-    \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{SetCounter}};
-    \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
-    \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
-    \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{Ck};
-    \draw[hwwire,<-] (p.south) -- ++(0,-4ex);
-    \draw[hwwire,-] (p.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
-    \draw[hwwire,-] (m.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
-  \end{tikzpicture}
-  \end{center}
-\end{figure}
 
 
 On a 4 compteurs d'adresses, chacun  répliqué dans le processeur et dans la mémoire (Table~\ref{tab:counters}).
@@ -463,7 +486,11 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 \end{center}
 \end{table}
 
-\section{Coût des opérations}
+
+\section{Expériences}
+
+\section{Améliorations et pistes d'améliorations}
+
 Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
 \begin{enumerate}
 \item les instructions du programme (code lu par le processeur).
@@ -477,9 +504,19 @@ Les $32$ bits de \texttt{r0} sont écrits, puis on doit à nouveau  reculer le p
 La table \ref{tab:costs} résume le coût de chaque opération.
 
 \subsection{Combien de registres ?}
-Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions : doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions, avoir trop peu de registres oblige à utiliser fréquemment la pile. On peut {\it a priori} considérer que $4$ registres rend le processeur impraticable, et $16$ est sufisamment confortable pour programmer.\par
-Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux registres sans utiliser de registre intermédiaire ?), les élèves s'en sont sortis avec des statistiques de \texttt{push} raisonnables (inférieures à 1\% des instructions). On peut donc espérer avec un \texttt{push} efficace un gain optimal avec seulement 8 registres. Cependant, la pénurie de registres restant d'actualité, on peut penser qu'un gain serait fait avec, par exemple une fenêtre de registres comme sur le SPARC.
+Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions :
+d'un côté, doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions;
+de l'autre, avoir trop peu de registres oblige à utiliser plus fréquemment la mémoire.
+En survolant les processeurs existant, on peut {\it a priori} considérer que $4$ registres rend le processeur impraticable, et que $16$ est sufisamment confortable pour programmer.
+Le choix de 8 est en partie pédagogique: il s'agissait de pouvoir écrire nos premiers programmes assembleur avec assez de registres pour être confortable, et toutefois d'être contraint dès que les programmes deviennent un peu plus gros. 
+Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux registres sans utiliser de registre intermédiaire ?), les élèves s'en sont sortis avec des statistiques de \emph{spill} mémoire raisonnables (inférieures à 1\% des instructions).
+Toutefois, une vraie réponse à cette question demande de faire une étude qui couvre également (et surtout) la problématique de la compilation.
+% 
+% On peut donc espérer avec un \texttt{push} efficace un gain optimal avec seulement 8 registres. 
+Il faudrait voir également si un système de fenêtre de registres comme sur le SPARC ne permettrait pas de réduire la quantité de bits d'instruction servant à encoder les registres.
+% Cette section fait l'hypothèse que 
 
+\subsection{Modes d'adressage mémoire}
 \subsection{Bits de compteurs}
 \subsubsection{choix initiaux}
 On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
@@ -551,7 +588,13 @@ Après améliorations, on arrive à ce nouveau tableau :
     \end{tabular}
   \end{center}
 \end{table}
-  
+
+\section{Conclusion et perspectives}
+
+- une étude de l'encodage d'un jeu d'instruction universel si l'on enlève la contrainte de la taille des codes
+
+- quel réalisme et quelles applications
+
 \bibliography{biblio.bib}
 
 \end{document}
