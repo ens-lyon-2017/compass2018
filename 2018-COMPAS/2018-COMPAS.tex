@@ -489,6 +489,48 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 
 \section{Expériences}
 
+Pour une petite suite de benchmarks (écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture), nous avons réalisé les mesures suivantes.
+
+La première expérience consiste à utiliser l'encodage initial.
+Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
+D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
+Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
+
+La seconde expérience (dont es résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) donne les valeurs obtenues lorsque le même programme utilise un encodage de Hufmann optimal \emph{pour ce benchmark}.
+Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
+Bien sûr, cette seconde expérience reviendrait à construire un processeur optimisé pour chaque benchmark, ce qui n'est pas déontologique: l'intérêt de cette seconde expérience est de donner une borne inférieure au nombre de bits échangés pour chaque benchmark. 
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c|c|c|}
+    \hline
+    benchmark & add2i & .... &  \\
+    \hline
+    \hline
+  \end{tabular}
+  \caption{Pourcentage d'utilisation de quelques instructions}
+  \label{tab:opcounts}
+\end{table}
+
+
+
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c||c|c|}
+    \hline
+    benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
+                 &                     &            & programme & données                         \\
+    \hline
+    \hline
+    binmult,init &                     &            &           &                                 \\
+    binmult, opt &                     &            &           &                                 \\
+        \hline
+  \end{tabular}
+  \caption{Nombre de bits échangés par benchmark}
+  \label{tab:bitcounts}
+\end{table}
+
 \section{Améliorations et pistes d'améliorations}
 
 Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
@@ -595,6 +637,7 @@ Après améliorations, on arrive à ce nouveau tableau :
 
 - quel réalisme et quelles applications
 
+- un processeur dont l'encodage est reconfigurable? 
 \bibliography{biblio.bib}
 
 \end{document}
