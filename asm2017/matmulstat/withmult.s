@@ -88,9 +88,11 @@ multmatrix:
 	push 64 r4
 
 	let r0 r4
-	push 64 r7
-	call multlibmult
-	pop 64 r7
+	
+	;; on simule le fait d'avoir une multiplication dans l'ALU
+	;; et les instructions. En vrai cela prendrait (instr) + 3*reg
+	add2i r0 0 		
+	
 	shift left r2 6
 	push 64 r2
 
