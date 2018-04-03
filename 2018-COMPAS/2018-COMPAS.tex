@@ -37,6 +37,7 @@
 \date{\today}
 
 \maketitle
+\sloppy
 
 \begin{abstract}
 Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 16 et 64 bits).
@@ -101,7 +102,7 @@ Mais ces registres sont des vecteurs de données d'au plus 64 bits.
 
 Une question intéressante, et qui commence à toucher le jeu d'instruction, est l'adressabilité, c'est-à-dire la granularité à laquelle on peut adresser la mémoire.
 L'ancêtre 4004 adressait sa mémoire par cases de 4 bits, ce qui correspondait au besoin du décimal codé en binaire. Le processeur Saturn des calculettes HP était aussi un processeur 4/20 bits.
-La plupart des processeurs adressent leur mémoire par octet pour être efficace sur le traitement de texte.
+La plupart des processeurs (dont les Intel/AMD de nos PC et les ARM de nos gadgets) adressent leur mémoire par octet pour être efficace sur le traitement de texte.
 
 Cela dit, dans un processeur 32 bits, les données de 32 bits doivent avoir des adresses dites alignées, c'est à dire multiples de 4 octets. Un accès non aligné se traduit selon les ISA par une faute ou par un accès beaucoup plus lent.
 
@@ -117,15 +118,15 @@ Les deux sont déjà différentes dans les processeurs actuels.
 Dans le jeu d'instruction AMD64, l'ISA définit une mémoire adressable par octet, avec des contraintes d'alignements pour les accès à des données plus grandes.
 Par contre l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
 
-Passer d'un adressage par octet à un adressage au bit complexifie légèrement l'interface processeur-cache.
+Certes, passer d'un adressage par octet à un adressage au bit complique légèrement l'interface processeur-cache.
 On peut estimer que cela ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
 Cela dit, dans tout cet article nous ignorons sereinement cette problématique.
 Nous ne remettrons les pieds sur terre que dans la discussion de conclusion.
 
 
 Mais que gagne-t-on à avoir une adresse pour chaque bit?  On peut manipuler des données au bit près.
-Surtout, on peut manipuler des données de taille variables au bit près.
-Comme domaine d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
+Surtout, la tailles des données peut être variable au bit près.
+Comme exemple d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
 Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses principales motivations reste: les transferts de données sont extrêmement coûteux.
 D'après Dally, en technologie 28nm, le calcul d'une multiplication-addition flottante sur des données 64 bits coûte 50pJ, et l'accès aux registres sur puce est du même ordre de grandeur, alors qu'une lecture de 64 bits de la DRAM coûte 4000pJ.
 \todo{F2D: citation}
@@ -150,13 +151,27 @@ Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séa
 Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 
 \subsection{Architecture générale et interface mémoire}
+Pour donner une interface simple à l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
+Les données passent en série, bit à bit, sur le fil \texttt{D}.
+Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
+Pour ne pas avoir à transmettre une adresse de $n$ nbits par bit de donnée, les adresses sont le plus souvent implicites.
+Dans ce but, on a 4 compteurs, répliqués dans le processeur et la mémoire.
+Par exemple le pointeur de programme, PC, est l'un de ces compteurs.
+Pour lire une donnée, le processeur sélectionne un des compteurs en positionnant les deux bits  \texttt{Select}.
+Puis il lève \texttt{Read}.
+Tant que \texttt{Read} vaut 1, le compteur sélectionné s'incrémente (côté processeur comme côté mémoire) et les bits qu'il pointe sont transférés sur le fil \texttt{D}.
+Lorsque le processeur décide qu'il a lu toute une donnée, il baisse \texttt{Read}.
+
+Ce mécanisme fonctionne de manière similaire en cas d'écriture.
+Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}.
 
 \begin{figure}[h]
-  \caption{Overview of the processor-memory interface}
+  \caption{L'interface processeur-mémoire proposée}
   \label{fig:overview}
     \begin{center}
   \begin{tikzpicture}
-    \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {Processor} ;
+    \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {~~~Processor} ;
+%    \draw  (p) ++(0,-10ex)  node {} ;
     \node[hwblock, minimum width=25ex,minimum height=25ex, align=center] (m) at (30ex,0)  {Serial\\ Memory} ;
     
     \draw (p.north west)  ++(4ex,-3ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{PC} ;
@@ -169,15 +184,14 @@ Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleur
     \draw (m.north east)  ++(-4ex,-11ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A0} ;
     \draw (m.north east)  ++(-4ex,-15ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A1} ;
 
-    \draw[hwwire,->] (p.40) -- (m.140) node[midway,above]{\texttt{Dpm}};
-    \draw[hwwire,<-] (p.35) -- (m.145) node[midway,below]{\texttt{Dmp}};
+    \draw[hwwire,<->] (p.35) -- (m.145) node[midway,above]{\texttt{D}};
 
     \draw[hwwire,->] (p.10) -- (m.170) node[midway,above]{\texttt{Read}};
     \draw[hwwire,->] (p.355) -- (m.185) node[midway,above]{\texttt{Write}};
     \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{SetCounter}};
     \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
     \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
-    \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{Ck};
+    \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{\texttt{Ck}};
     \draw[hwwire,<-] (p.south) -- ++(0,-4ex);
     \draw[hwwire,-] (p.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
     \draw[hwwire,-] (m.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
