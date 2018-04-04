@@ -163,11 +163,11 @@ Tant que \texttt{Read} vaut 1, le compteur sélectionné s'incrémente (côté p
 Lorsque le processeur décide qu'il a lu toute une donnée, il baisse \texttt{Read}.
 
 Ce mécanisme fonctionne de manière similaire en cas d'écriture.
-Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}.
+Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
+Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
+
 
 \begin{figure}[h]
-  \caption{L'interface processeur-mémoire proposée}
-  \label{fig:overview}
     \begin{center}
   \begin{tikzpicture}
     \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {~~~Processor} ;
@@ -197,19 +197,32 @@ Il faut naturellement des instructions qui permettent de changer les compteurs: 
     \draw[hwwire,-] (m.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
   \end{tikzpicture}
   \end{center}
+  \caption{L'interface processeur-mémoire proposée}
+  \label{fig:overview}
 \end{figure}
 
-\subsection{Registres généralistes}
-Dans cette expérience nous avons fixé le nombre de registres à 8.
-C'est un choix arbitraire et discutable, motivé par des raisons pédagogiques (rencontrer cette limite dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
+\subsection{Comparaison avec une architecture classique}
+Si l'on compare la figure~\ref{fig:overview} avec la figure~\ref{fig:mvn} lors de l'exécution d'un programme classique, il est clair que notre proposition dégrade le temps d'exécution, puisque la transmission de la moindre instruction et la moindre donnée demandent plusieurs cycles d'horloge.
 
-Les registres généralistes sont notés r0 à r7.
-Ils sont tous parfaitement identiques, sauf r7 qui reçoit l'adresse de retour en cas de \texttt{call}.
+Si par contre on s'intéresse aux nombre de transitions sur les fils (une métrique raisonnable pour mesurer la consommation dynamique), on peut faire les observations suivantes.
 
-\paragraph*{Autocritique} Les architectures modernes offrent typiquement entre 16 et 64 registres.
-Elles offrent également des mécanismes qui exposent dans le jeu d'instruction un sous-ensemble des registres architecturaux, soit de manière explicite (les fenêtres de registres du SPARC), soit de manière implicite (le techniques de renommage qui permettent l'exécution superscalaire).
+\begin{itemize}
+\item Dans la lecture de données consécutives en mémoire, notre proposition fait l'économie de toutes les transitions sur le bus d'adresse.
+  En particulier, la lecture des instructions d'un programme, en dehors des branchements,  ne demande aucune transmission d'adresse.
+\item Adresses comme données peuvent être transmises au bit près.
+\item Par contre on a une transition d'horloge par bit transmis, au lieu d'une transition d'horloge pour $w_a$ ou $w_d$ bits.
+\end{itemize}
+Il y a donc un potentiel de réaliser moins de transitions avec le système proposé, potentiel que le présent article se propose de mesurer.
 
-On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
+Pour cela nous nous efforçons principalement de minimiser la taille de l'encodage du jeu d'instructions.
+
+\subsection{Généralités sur les jeux d'instructions}
+Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
+\todo{blabla}
+\subsection{un c\oe ur  RISC}
+Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres 32 ou 64 bits.  
+Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
+
 
 \subsection{Format général des mnémoniques}
 Les instructions commencent toutes par un mnémonique, suivi des opérandes, le tout séparé par des espaces.
@@ -229,14 +242,6 @@ Le suffixe \texttt{i} signifie que le dernier opérande est une constante imméd
 L'assemblage commence à l'adresse 0, qui est celle à laquelle notre processeur démarre.
 
  
-Sucre syntaxique offert par l'assembleur:
-\begin{itemize}
-\item On peut utiliser des labels pour les sauts.
-\item Le mot-clé \texttt{.const n xxxx}  réserve $n$ bits de mémoire, initialisés à la constante xxxx, qui est priée de tenir sur $n$ bits.
-\item Les constante hexadécimales sont préfixées par \texttt{0x}, par exemple \texttt{0xff}
-\item Le commentaire est introduit par un point-virgule \texttt{;}
-\end{itemize}
- 
 
 Exemple de programme :
 \begin{verbatim}
@@ -249,27 +254,215 @@ boucle:
 \subsection{Le jeu d'instructions et son encodage intial}
 
 
+La table \ref{tab:opcodes} en annexe décrit l'opcode qui commence chaque instruction.
 
-La table \ref{tab:opcodes} décrit l'opcode qui commence chaque instruction.
 
-Remarques en vrac: 
+
+\subsection{Les instructions de branchement }
+\label{sec:jumpcallret}
+
+Soit $a$ l'adresse du premier bit suivant l'instruction \texttt{jump} ou \texttt{call} (i.e. la valeur du PC lorsqu'il a fini de lire l'instruction et ses opérandes).
+Soit $d$ la valeur de déplacement (encodée dans une constante de type \textit{addr}, et signée).
+
+L'instruction \texttt{jump} réalise $\mathtt{pc}\leftarrow a + c$.
+L'instruction \texttt{jumpif} aussi, mais seulement si la condition est vraie.
+
+La condition  est encodée sur trois bits  selon la table~\ref{tab:conditions} (ARM utilise 4 bits).
+
+L'instruction \texttt{call} copie $\texttt{a}$ dans $r_{7}$, puis réalise $\mathtt{pc} \leftarrow \texttt{d}$
+(\emph{addr} est toujours signé).
+
+L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
+
+\subsection{Les instructions d'accès mémoire}
+\label{sec:mem}
+
+
+
+On a 4 compteurs d'adresses, chacun  répliqué dans le processeur et dans la mémoire (Table~\ref{tab:counters}).
+
+
+Les instructions \texttt{readze}, \texttt{readse} et \texttt{write} lisent ou écrivent le nombre spécifié de bits tout en incrémentant les compteurs correspondant.
+
+On peut émuler une instruction de lecture/écriture mémoire d'un processeur classique en deux instructions: un \texttt{setctr} puis un \texttt{readze} ou \texttt{readse} ou \texttt{write}.
+
+Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendante en mémoire: 
 \begin{itemize}
-\item le not logique est implémenté par xor -1
-\item la direction du shift est encodée dans un bit après l'instruction pour économiser un opcode. On aurait pu définir deux opcodes comme pour \texttt{readze}/\texttt{readse} mais c'est plus rigolo de lire \texttt{shift left r1 1}.
+\item \texttt{push} \emph{size} \emph{reg} réalise: \\
+  $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}\\ \texttt{write}  \textit{sp} \textit{size} \textit{reg} \\   $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}
+\item \texttt{pop} \emph{size} \emph{reg} est un raccourci offert par l'assembleur pour \\\texttt{readze} \textit{sp} \emph{size} \emph{reg}\\
+  
 \end{itemize}
 
 
+\section{Expériences}
+
+Pour une petite suite de benchmarks (écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture), nous avons réalisé les mesures suivantes.
+
+La première expérience consiste à utiliser l'encodage initial.
+Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
+D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
+Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
+
+La seconde expérience (dont es résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) donne les valeurs obtenues lorsque le même programme utilise un encodage de Hufmann optimal \emph{pour ce benchmark}.
+Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
+Bien sûr, cette seconde expérience reviendrait à construire un processeur optimisé pour chaque benchmark, ce qui n'est pas déontologique: l'intérêt de cette seconde expérience est de donner une borne inférieure au nombre de bits échangés pour chaque benchmark. 
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c|c|c|}
+    \hline
+    benchmark & add2i & .... &  \\
+    \hline
+    \hline
+  \end{tabular}
+  \caption{Pourcentage d'utilisation de quelques instructions}
+  \label{tab:opcounts}
+\end{table}
+
+
+
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c||c|c||c|c|}
+    \hline
+    benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
+                 &                     &            & programme & données                         \\
+    \hline
+    \hline
+    binmult,init &                     &            &           &                                 \\
+    binmult, opt &                     &            &           &                                 \\
+        \hline
+  \end{tabular}
+  \caption{Nombre de bits échangés par benchmark}
+  \label{tab:bitcounts}
+\end{table}
+
+\section{Améliorations et pistes d'améliorations}
+
+Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
+\begin{enumerate}
+\item les instructions du programme (code lu par le processeur).
+\item les données explicitement lues ou écrites (à l'aide de \texttt{readze}, par exemple)
+\item Les bits d'adresses (typiquement, l'affectation de compteurs)
+\end{enumerate}
+
+Par exemple, \texttt{jump 0x1f68} va être lue par le processeur : $4$ bits plus $18$ bits (une constante sur $16$ bits), puis pc + \texttt{0x1f68} va être écrit dans le pc, $64$ bits vont donc transiter. On a donc un total de $22$ bits d'instruction, $0$ bit de données et $64$ bits de compteurs.
+La table \ref{tab:costs} résume le coût de chaque opération.
+
+\subsection{Combien de registres ?}
+Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions :
+d'un côté, doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions;
+de l'autre, avoir trop peu de registres oblige à utiliser plus fréquemment la mémoire.
+En survolant les processeurs existant, on peut {\it a priori} considérer que $4$ registres rend le processeur impraticable, et que $16$ est sufisamment confortable pour programmer.
+Le choix de 8 est en partie pédagogique: il s'agissait de pouvoir écrire nos premiers programmes assembleur avec assez de registres pour être confortable, et toutefois d'être contraint dès que les programmes deviennent un peu plus gros. 
+Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux registres sans utiliser de registre intermédiaire ?), les élèves s'en sont sortis avec des statistiques de \emph{spill} mémoire raisonnables (inférieures à 1\% des instructions).
+Toutefois, une vraie réponse à cette question demande de faire une étude qui couvre également (et surtout) la problématique de la compilation.
+
+Les architectures modernes offrent typiquement entre 16 et 64 registres.
+Elles offrent également des mécanismes qui exposent dans le jeu d'instruction un sous-ensemble des registres architecturaux, soit de manière explicite (les fenêtres de registres du SPARC), soit de manière implicite (le techniques de renommage qui permettent l'exécution superscalaire).
+
+On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
+\todo{relire tout cela}
+
+\subsection{Modes d'adressage mémoire}
+\subsection{Bits de compteurs}
+\subsubsection{choix initiaux}
+On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
+Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-decrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
+\subsubsection{améliorations}
+La première amélioration, proposée dès le départ est de conserver une copie de chaque compteur dans le processeur. Ainsi, les échanges de bits de compteurs ne sont nécessaires que pour synchroniser les compteurs du processeur et de la mémoire : \texttt{getctr} ne coûte plus aucun bit de compteur, on a aussi un gain sur le \texttt{push}
+Ensuite, lors d'une affectation de compteurs, on n'est pas obligé d'écrire tous les bits s'ils sont envoyés poids faible d'abord. Si on envoie $n\leqslant 64$ bits à la mémoire, la mémoire peut écrire ces $n$ bits et remplire les $64-n$ autres avec des zéros. Cela diminuerait grandement le coût des affectations du pc, très proche du début de la mémoire (le code est stocké en \texttt{0x0}). Une autre idée, plus générale, serait de ne pas toucher aux $64-n$ derniers bits. On aurait un gain lors d'affectations proches en mémoire (même si bien sûr on ne peut rien garantir : \texttt{0x1000000 - 0x1 = 0xffffff})\par
+Une autre amélioration, non-implémentée, serait d'ajouter des instructions d'incrémentation des compteurs par un registre ou une constante. On remplacerait les trois instructions \texttt{getctr a0 r0 ; add2 r0 r1 ; setctr a0 r0} par l'unique \texttt{incrctr a0 r0}. Si on ne gagne pas sur le nombre de bits de compteurs échangés (toujours $64$), cette instruction est assez facile à implanter en machine, on factorise un trio d'instruction assez présent dans la boucle interne de nombreux programmes (par exemple la multiplication matricielle) en une seule, et on gagne un registre.
+
+\subsubsection{les adresses de jump}
+
+\subsubsection{le problème de la pile}
+Si avec le post-incrément, le \texttt{pull} ne coûte rien, dans la version naïve, le push est extrêmement coûteux : \texttt{push 32 r0} fait d'abord transiter $7$ bits de la mémoire au processeur pour l'opérande, $3$ pour le registre. L'instruction est lue. Il faudra ensuite faire reculer le pointeur de pile de $32$ bits : $64$ bits pour récupérer \texttt{sp}, $64$ autres pour l'affecter. Les $32$ bits de \texttt{r0} sont écrits, puis on fait de nouveau reculer le pointeur de pile : $64$ bits. Soit un total d'instructions lues de $10$, $32$ bits de lus, et $192$ bits de compteurs.\par
+C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine la quantité de registres nécessaire. La première amélioration proposée permet de faire descendre le coût du \texttt{push} à 128 bits, et plus si on décide d'un endroit adéquat pour placer le fond de la pile. Cependant, un gain énorme serait d'autoriser l'écriture avec pré-décrément : en écrivant les bits un à un à l'envers et en pré-décrément sur sp, on n'a plus besoin d'affecter sp. Le nombre de bits d'adresse dus au push retomberait à 0. Une manière assez simple de l'implémenter et de faire transiter le sens d'écriture sur le fil \texttt{Read} : 0 indiquerait post-incrément, et 1 pré-décrément. On pourrait même alors imaginer un \texttt{push} prenant en argument un compteur. Ainsi, chaque compteur pourrait devenir une pile.
+
+\begin{table}[!h]
+  \caption{Coûts des opérations}
+  \label{tab:costs}
+  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
+  \begin{center}
+  \begin{tabular}{|l|c|c|c|}
+    \hline  
+    type  & bits d'instruction & bits de données & bits de compteurs \\
+    \hline  
+    \hline
+    \texttt{arith} \reg\ \reg\ &  $6$ & & \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \reg\ & $9$ & & \\
+    \hline
+    \texttt{arith} \reg\ \const\ & $3$ + \const & & \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const & & \\
+    \hline
+    \texttt{r/w} \ctr\ \size\ \reg & $2$ + \size\ + $3$ & \size & \\
+    \hline
+    \texttt{get-,setctr} \ctr\ \reg\ & $2$ + $3$ & & $64$ \\
+    \hline
+    \texttt{jump} & \addr\ & & $64$ \\
+    \hline
+    \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $64$\\
+    \hline
+    \texttt{call} \addr & \addr\ & & $64$\\
+    \hline
+    \texttt{return} & & & $64$\\
+    \hline
+    \texttt{push} \size\ \reg & $3$ & \size & $192$\\
+    \hline
+  \end{tabular}
+  \end{center}
+Après améliorations, on arrive à ce nouveau tableau :
+  \begin{center}
+    \begin{tabular}{|l|c|c|c|}
+      \hline  
+      type  & instructions lues & données lues/écrites & compteurs \\
+      \hline  
+      \hline
+      \texttt{getctr} \ctr\ \reg\ & $2$ + $3$ & & \\
+      \hline
+      \texttt{setctr} \ctr\ \reg\ & $2$ + $3$ & & $\leqslant 64$ \\
+      \hline
+      \texttt{jump} & \addr\ & & $\leqslant 64$ \\
+      \hline
+      \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $\leqslant 64$\\
+      \hline
+      \texttt{call} \addr & \addr\ & & $\leqslant 64$\\
+      \hline
+      \texttt{return} & & & $\leqslant64$\\
+      \hline
+      \texttt{push} \size\ \reg & $3$ & \size &\\
+      \hline
+    \end{tabular}
+  \end{center}
+\end{table}
+
+\section{Conclusion et perspectives}
+
+- une étude de l'encodage d'un jeu d'instruction universel si l'on enlève la contrainte de la taille des codes
+
+- quel réalisme et quelles applications
+
+- un processeur dont l'encodage est reconfigurable? 
+\bibliography{biblio.bib}
+
+
+\appendix
 \begin{table}[!h]
   \caption{Liste des instructions.}
   \label{tab:opcodes}
-  Le codage de Huffmann des instructions est basée sur les statistiques des années précédentes.
-  Les opérandes d'une instruction la suivent en mémoire. Ils sont encodés comme suit:
+  Le choix des opcodes est arbitraire.
+  Les opérandes d'une instruction suivent l'opcode:
   \begin{itemize}
 \item \textit{reg} $\in \{\mathtt{r0}, \mathtt{r1}, ..., \mathtt{r7}\}$ et est encodé par le numéro du registre en binaire.
-\item \textit{const}, \textit{shiftval} et \textit{addr} sont définis par la table \ref{tab:constantes}. La dernière colonne de la table  \ref{tab:opcodes} précise si une constante est étendue avec son signe (s) ou des zéros (z).   
+\item \textit{const}, \textit{shiftval} et \textit{addr} sont définis par la table \ref{tab:constantes}. La colonne \emph{ext} de la table  \ref{tab:opcodes} précise si une constante est étendue avec son signe (s) ou des zéros (z).   
 \item  \textit{cond} est défini par la table~\ref{tab:conditions}.
 \item \ctr\ est défini par la table~\ref{tab:counters}.
-\item \textit{dir} peut être le mnemnonique \texttt{left}, encodé par 0, ou le mnemonique \texttt{right}, encodé par 1.
+\item \textit{dir} peut être \texttt{left}, encodé par 0, ou \texttt{right}, encodé par 1.
 \end{itemize}
 \begin{center}
   \begin{tabular}{|l|l|l|l|l|c|}
@@ -355,6 +548,33 @@ Remarques en vrac:
 \end{table}
 
 
+
+
+\begin{table} 
+  \caption{Les 4 compteurs. Ces deux bits sont transmis sur le signal \texttt{Select} de la figure~\ref{fig:overview}. }
+  \label{tab:counters}
+\begin{center}
+  \begin{tabular}{|l|l|l|}
+    \hline  
+  encoding  & mnemonic & description \\
+    \hline  
+    \hline  
+    00& \texttt{pc} &  program counter\\
+    \hline
+    01& \texttt{sp} & stack pointer\\
+    \hline
+    10& \texttt{a0} &  generic address counter\\
+    \hline
+    11& \texttt{a1} &  generic address counter\\
+    \hline
+  \end{tabular}
+\end{center}
+\end{table}
+
+
+
+
+
 \begin{table}
   \label{tab:constantes}
   \centering
@@ -406,25 +626,13 @@ Remarques en vrac:
     \hline
   \end{tabular}
 \end{table}
-
-
-
-\subsection{Les instructions de branchement }
-\label{sec:jumpcallret}
-
-Soit $a$ l'adresse du premier bit suivant l'instruction \texttt{jump} ou \texttt{call} (i.e. la valeur du PC lorsqu'il a fini de lire l'instruction et ses opérandes).
-Soit $d$ la valeur de déplacement (encodée dans une constante de type \textit{addr}, et signée).
-
-L'instruction \texttt{jump} réalise $\mathtt{pc}\leftarrow a + c$.
-L'instruction \texttt{jumpif} aussi, mais seulement si la condition est vraie.
-
-La condition  est encodée sur trois bits  selon la table~\ref{tab:conditions}.
 \newcommand{\bool}{\mathbb{B}}
 \newcommand{\booland}{\wedge}
 \newcommand{\boolor}{\vee}
 \newcommand{\boolnot}[1]{\overline{#1}}
 \begin{table} 
-  \caption{Condition codes}
+  \caption{Conditions. La différence entre \texttt{sgt} et \texttt{gt} s'observe par exemple sur la comparaison entre \texttt{r0} et -1.
+}
   \label{tab:conditions}
 \begin{center}
   \begin{tabular}{|c|c|c||l||l|c|}
@@ -452,206 +660,7 @@ La condition  est encodée sur trois bits  selon la table~\ref{tab:conditions}.
 \end{center}
 \end{table} 
 
-La différence entre \texttt{sgt} et \texttt{gt} s'observe par exemple sur la comparaison entre \texttt{r0} et -1.
-
-L'instruction \texttt{call} copie $\texttt{a}$ dans $r_{7}$, puis réalise $\mathtt{pc} \leftarrow \texttt{d}$
-(c'est un peu bizarre de sauter à des adresses négatives mais du coup \emph{addr} est toujours signé).
-
-L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
-
-\subsection{Les instructions d'accès mémoire}
-\label{sec:mem}
 
 
-
-On a 4 compteurs d'adresses, chacun  répliqué dans le processeur et dans la mémoire (Table~\ref{tab:counters}).
-
-
-Les instructions \texttt{readze}, \texttt{readse} et \texttt{write} lisent ou écrivent le nombre spécifié de bits tout en incrémentant les compteurs correspondant.
-
-On peut émuler une instruction de lecture/écriture mémoire d'un processeur classique en deux instructions: un \texttt{setctr} puis un \texttt{readze} ou \texttt{readse} ou \texttt{write}.
-
-Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendante en mémoire: 
-\begin{itemize}
-\item \texttt{push} \emph{size} \emph{reg} réalise: \\
-  $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}\\ \texttt{write}  \textit{sp} \textit{size} \textit{reg} \\   $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}
-\item \texttt{pop} \emph{size} \emph{reg} est un raccourci offert par l'assembleur pour \\\texttt{readze} \textit{sp} \emph{size} \emph{reg}\\
-  
-\end{itemize}
-
-\begin{table} 
-  \caption{Counters. Ces deux bits sont transmis sur le signal \texttt{Select} de la figure~\ref{fig:overview}. }
-  \label{tab:counters}
-\begin{center}
-  \begin{tabular}{|l|l|l|}
-    \hline  
-  encoding  & mnemonic & description \\
-    \hline  
-    \hline  
-    00& \texttt{pc} &  program counter\\
-    \hline
-    01& \texttt{sp} & stack pointer\\
-    \hline
-    10& \texttt{a0} &  generic address counter\\
-    \hline
-    11& \texttt{a1} &  generic address counter\\
-    \hline
-  \end{tabular}
-\end{center}
-\end{table}
-
-
-\section{Expériences}
-
-Pour une petite suite de benchmarks (écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture), nous avons réalisé les mesures suivantes.
-
-La première expérience consiste à utiliser l'encodage initial.
-Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
-D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
-Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
-
-La seconde expérience (dont es résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) donne les valeurs obtenues lorsque le même programme utilise un encodage de Hufmann optimal \emph{pour ce benchmark}.
-Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
-Bien sûr, cette seconde expérience reviendrait à construire un processeur optimisé pour chaque benchmark, ce qui n'est pas déontologique: l'intérêt de cette seconde expérience est de donner une borne inférieure au nombre de bits échangés pour chaque benchmark. 
-
-\begin{table}
-  \centering
-  \begin{tabular}{|c||c|c|c|c|}
-    \hline
-    benchmark & add2i & .... &  \\
-    \hline
-    \hline
-  \end{tabular}
-  \caption{Pourcentage d'utilisation de quelques instructions}
-  \label{tab:opcounts}
-\end{table}
-
-
-
-
-\begin{table}
-  \centering
-  \begin{tabular}{|c||c|c||c|c|}
-    \hline
-    benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
-                 &                     &            & programme & données                         \\
-    \hline
-    \hline
-    binmult,init &                     &            &           &                                 \\
-    binmult, opt &                     &            &           &                                 \\
-        \hline
-  \end{tabular}
-  \caption{Nombre de bits échangés par benchmark}
-  \label{tab:bitcounts}
-\end{table}
-
-\section{Améliorations et pistes d'améliorations}
-
-Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
-\begin{enumerate}
-\item les instructions du programme (code lu par le processeur).
-\item les données explicitement lues ou écrites (à l'aide de \texttt{readze}, par exemple)
-\item Les bits d'adresses (typiquement, l'affectation de compteurs)
-\end{enumerate}
-
-Par exemple, \texttt{jump 0x1f68} va être lue par le processeur : $4$ bits plus $18$ bits (une constante sur $16$ bits), puis pc + \texttt{0x1f68} va être écrit dans le pc, $64$ bits vont donc transiter. On a donc un total de $22$ bits d'instruction, $0$ bit de données et $64$ bits de compteurs.
-La table \ref{tab:costs} résume le coût de chaque opération.
-
-\subsection{Combien de registres ?}
-Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions :
-d'un côté, doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions;
-de l'autre, avoir trop peu de registres oblige à utiliser plus fréquemment la mémoire.
-En survolant les processeurs existant, on peut {\it a priori} considérer que $4$ registres rend le processeur impraticable, et que $16$ est sufisamment confortable pour programmer.
-Le choix de 8 est en partie pédagogique: il s'agissait de pouvoir écrire nos premiers programmes assembleur avec assez de registres pour être confortable, et toutefois d'être contraint dès que les programmes deviennent un peu plus gros. 
-Avec huit registres, et pas mal d'astuce (par exemple, comment échanger deux registres sans utiliser de registre intermédiaire ?), les élèves s'en sont sortis avec des statistiques de \emph{spill} mémoire raisonnables (inférieures à 1\% des instructions).
-Toutefois, une vraie réponse à cette question demande de faire une étude qui couvre également (et surtout) la problématique de la compilation.
-% 
-% On peut donc espérer avec un \texttt{push} efficace un gain optimal avec seulement 8 registres. 
-Il faudrait voir également si un système de fenêtre de registres comme sur le SPARC ne permettrait pas de réduire la quantité de bits d'instruction servant à encoder les registres.
-% Cette section fait l'hypothèse que 
-
-\subsection{Modes d'adressage mémoire}
-\subsection{Bits de compteurs}
-\subsubsection{choix initiaux}
-On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
-Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-decrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
-\subsubsection{améliorations}
-La première amélioration, proposée dès le départ est de conserver une copie de chaque compteur dans le processeur. Ainsi, les échanges de bits de compteurs ne sont nécessaires que pour synchroniser les compteurs du processeur et de la mémoire : \texttt{getctr} ne coûte plus aucun bit de compteur, on a aussi un gain sur le \texttt{push}
-Ensuite, lors d'une affectation de compteurs, on n'est pas obligé d'écrire tous les bits s'ils sont envoyés poids faible d'abord. Si on envoie $n\leqslant 64$ bits à la mémoire, la mémoire peut écrire ces $n$ bits et remplire les $64-n$ autres avec des zéros. Cela diminuerait grandement le coût des affectations du pc, très proche du début de la mémoire (le code est stocké en \texttt{0x0}). Une autre idée, plus générale, serait de ne pas toucher aux $64-n$ derniers bits. On aurait un gain lors d'affectations proches en mémoire (même si bien sûr on ne peut rien garantir : \texttt{0x1000000 - 0x1 = 0xffffff})\par
-Une autre amélioration, non-implémentée, serait d'ajouter des instructions d'incrémentation des compteurs par un registre ou une constante. On remplacerait les trois instructions \texttt{getctr a0 r0 ; add2 r0 r1 ; setctr a0 r0} par l'unique \texttt{incrctr a0 r0}. Si on ne gagne pas sur le nombre de bits de compteurs échangés (toujours $64$), cette instruction est assez facile à implanter en machine, on factorise un trio d'instruction assez présent dans la boucle interne de nombreux programmes (par exemple la multiplication matricielle) en une seule, et on gagne un registre.
-
-\subsubsection{les adresses de jump}
-
-\subsubsection{le problème de la pile}
-Si avec le post-incrément, le \texttt{pull} ne coûte rien, dans la version naïve, le push est extrêmement coûteux : \texttt{push 32 r0} fait d'abord transiter $7$ bits de la mémoire au processeur pour l'opérande, $3$ pour le registre. L'instruction est lue. Il faudra ensuite faire reculer le pointeur de pile de $32$ bits : $64$ bits pour récupérer \texttt{sp}, $64$ autres pour l'affecter. Les $32$ bits de \texttt{r0} sont écrits, puis on fait de nouveau reculer le pointeur de pile : $64$ bits. Soit un total d'instructions lues de $10$, $32$ bits de lus, et $192$ bits de compteurs.\par
-C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine la quantité de registres nécessaire. La première amélioration proposée permet de faire descendre le coût du \texttt{push} à 128 bits, et plus si on décide d'un endroit adéquat pour placer le fond de la pile. Cependant, un gain énorme serait d'autoriser l'écriture avec pré-décrément : en écrivant les bits un à un à l'envers et en pré-décrément sur sp, on n'a plus besoin d'affecter sp. Le nombre de bits d'adresse dus au push retomberait à 0. Une manière assez simple de l'implémenter et de faire transiter le sens d'écriture sur le fil \texttt{Read} : 0 indiquerait post-incrément, et 1 pré-décrément. On pourrait même alors imaginer un \texttt{push} prenant en argument un compteur. Ainsi, chaque compteur pourrait devenir une pile.
-
-\begin{table}[!h]
-  \caption{Coûts des opérations}
-  \label{tab:costs}
-  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
-  \begin{center}
-  \begin{tabular}{|l|c|c|c|}
-    \hline  
-    type  & bits d'instruction & bits de données & bits de compteurs \\
-    \hline  
-    \hline
-    \texttt{arith} \reg\ \reg\ &  $6$ & & \\
-    \hline
-    \texttt{arith} \reg\ \reg\ \reg\ & $9$ & & \\
-    \hline
-    \texttt{arith} \reg\ \const\ & $3$ + \const & & \\
-    \hline
-    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const & & \\
-    \hline
-    \texttt{r/w} \ctr\ \size\ \reg & $2$ + \size\ + $3$ & \size & \\
-    \hline
-    \texttt{get-,setctr} \ctr\ \reg\ & $2$ + $3$ & & $64$ \\
-    \hline
-    \texttt{jump} & \addr\ & & $64$ \\
-    \hline
-    \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $64$\\
-    \hline
-    \texttt{call} \addr & \addr\ & & $64$\\
-    \hline
-    \texttt{return} & & & $64$\\
-    \hline
-    \texttt{push} \size\ \reg & $3$ & \size & $192$\\
-    \hline
-  \end{tabular}
-  \end{center}
-Après améliorations, on arrive à ce nouveau tableau :
-  \begin{center}
-    \begin{tabular}{|l|c|c|c|}
-      \hline  
-      type  & instructions lues & données lues/écrites & compteurs \\
-      \hline  
-      \hline
-      \texttt{getctr} \ctr\ \reg\ & $2$ + $3$ & & \\
-      \hline
-      \texttt{setctr} \ctr\ \reg\ & $2$ + $3$ & & $\leqslant 64$ \\
-      \hline
-      \texttt{jump} & \addr\ & & $\leqslant 64$ \\
-      \hline
-      \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $\leqslant 64$\\
-      \hline
-      \texttt{call} \addr & \addr\ & & $\leqslant 64$\\
-      \hline
-      \texttt{return} & & & $\leqslant64$\\
-      \hline
-      \texttt{push} \size\ \reg & $3$ & \size &\\
-      \hline
-    \end{tabular}
-  \end{center}
-\end{table}
-
-\section{Conclusion et perspectives}
-
-- une étude de l'encodage d'un jeu d'instruction universel si l'on enlève la contrainte de la taille des codes
-
-- quel réalisme et quelles applications
-
-- un processeur dont l'encodage est reconfigurable? 
-\bibliography{biblio.bib}
 
 \end{document}
