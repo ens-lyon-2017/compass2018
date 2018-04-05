@@ -3,8 +3,8 @@
 ;-----------------------------------------------------------------------------;
 
 ; Initialization (program input)
-	leti	r0 874
-	leti	r1 65
+	leti	r0 17
+	leti	r1 42
 	; r0 * r1 = 0xddea
 
 ; Main program (r2 = r0 * r1)

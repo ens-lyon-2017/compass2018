@@ -135,6 +135,7 @@ Il y a aussi des applications, comme les réseaux de neurones, qui se contentent
 
 \subsection{Pourquoi pas un jeu d'instruction au bit près?}
 
+Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
 \todo{F2D}
 
 \subsection{Contexte de ce travail}
@@ -146,11 +147,8 @@ Résumé des objectifs pédagogiques du cours ASR1
 \todo{F2D}
 
 
-\section{Présentation du jeu d'instruction initial}
-Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
-Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 
-\subsection{Architecture générale et interface mémoire}
+\section{Architecture générale et interface mémoire}
 Pour donner une interface simple à l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
 Les données passent en série, bit à bit, sur le fil \texttt{D}.
 Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
@@ -221,9 +219,22 @@ Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'archite
 Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
 Il est rediscuté en \ref{sec:amelioration}. 
 
-\subsection{Généralités sur les jeux d'instructions}
-Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
-\todo{blabla}
+
+
+
+
+
+
+
+
+\section{Présentation du jeu d'instruction initial}
+Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
+Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
+
+
+% \subsection{Généralités sur les jeux d'instructions}
+% Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
+% \todo{blabla}
 
 \subsection{Format général des instructions}
 Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
@@ -329,20 +340,38 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
   \label{tab:opcounts}
 \end{table}
 
+\texttt{binmult} est un programme qui réalise une multiplication de 17 par 42 par additions et décalages.
+Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 69 pour le coeur de boucle.
 
 
+\iffalse
+./emu/emu -i prog/mult.bin | ./huffmann.py > mult.huff
+
+# pour le .obj ou compter les bits
+./asm.py --loadhuffman mult.huff --stdout  prog/mult.s > mult.obj.huff
+# Puis éditer à la main pour compter les bits, argh.
+
+#pour le .bin
+./asm.py --loadhuffman mult.huff -o prog/mult.huff.bin prog/mult.s 
+./emu/emu -lh mult.huff -i prog/mult.huff.bin
+
+\fi
 
 \begin{table}
   \centering
-  \begin{tabular}{|c||c|c||c|c|}
+  \begin{tabular}{|c||c|c|c||c|c|c|c|c||c|}
     \hline
-    benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
-                 &                     &            & programme & données                         \\
+    & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exec.}                    \\
+    \hline
+
+    
+    benchmark    & instr & bits & bpi  & prog   & data R & data W & counters & branch & total \\
     \hline
     \hline
-    binmult,init &                     &            &           &                                 \\
-    binmult, opt &                     &            &           &                                 \\
+    binmult,init & 10    & 125  & 12,5 & 89,4\% &        &        &          & 10,6\% & 415   \\
+    binmult, opt &       & 113  & 11.3 &        &        &        &          &                \\
         \hline
+    \hline
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
   \label{tab:bitcounts}
@@ -398,53 +427,51 @@ C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine l
   \begin{center}
   \begin{tabular}{|l|c|c|c|}
     \hline  
-    type  & bits d'instruction & bits de données & bits de compteurs \\
+    type                               & bits d'instruction & bits de données & bits de compteurs              \\
     \hline  
     \hline
-    \texttt{arith} \reg\ \reg\ &  $6$ & & \\
+    \texttt{arith} \reg\ \reg\         & $6$                &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \reg\ \reg\ & $9$ & & \\
+    \texttt{arith} \reg\ \reg\ \reg\   & $9$                &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \const\ & $3$ + \const & & \\
+    \texttt{arith} \reg\ \const\       & $3$ + \const       &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const & & \\
+    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const       &                 &                                \\
     \hline
-    \texttt{r/w} \ctr\ \size\ \reg & $2$ + \size\ + $3$ & \size & \\
+    \texttt{r/w} \ctr\ \size\ \reg     & $2$ + \size\ + $3$ & \size           &                                \\
     \hline
-    \texttt{get-,setctr} \ctr\ \reg\ & $2$ + $3$ & & $64$ \\
+    \texttt{get-,setctr} \ctr\ \reg\   & $2$ + $3$          &                 & $64$                           \\
     \hline
-    \texttt{jump} & \addr\ & & $64$ \\
+    \texttt{jump}                      & \addr\             &                 & $64$                           \\
     \hline
-    \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $64$\\
+    \texttt{jumpif} \cond              & $3$ + \addr\       &                 & $0$ ou $64$                    \\
     \hline
-    \texttt{call} \addr & \addr\ & & $64$\\
+    \texttt{call} \addr                & \addr\             &                 & $64$                           \\
     \hline
-    \texttt{return} & & & $64$\\
+    \texttt{return}                    &                    &                 & $64$                           \\
     \hline
-    \texttt{push} \size\ \reg & $3$ & \size & $192$\\
+    \texttt{push} \size\ \reg          & $3$                & \size           & $192$                          \\
     \hline
   \end{tabular}
   \end{center}
-Après améliorations, on arrive à ce nouveau tableau :
+Tableau d'amélioration du nombre de bits de compteurs.
   \begin{center}
-    \begin{tabular}{|l|c|c|c|}
+    \begin{tabular}{|l|c|c|c|c|}
       \hline  
-      type  & instructions lues & données lues/écrites & compteurs \\
+      type                             & sans dédoublement  & initial         & pré-décrément & syncr futée    \\
       \hline  
       \hline
-      \texttt{getctr} \ctr\ \reg\ & $2$ + $3$ & & \\
+      \texttt{getctr}                  & $64$               & 0               &               &                \\
       \hline
-      \texttt{setctr} \ctr\ \reg\ & $2$ + $3$ & & $\leqslant 64$ \\
+      \texttt{setctr}                  & 64                 &                 &               & $\leqslant 64$ \\
       \hline
-      \texttt{jump} & \addr\ & & $\leqslant 64$ \\
+      \texttt{jump(if)}                & 64                 &                 &               & $\leqslant 64$ \\
       \hline
-      \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $\leqslant 64$\\
+      \texttt{call}                    & 128                & 64              &               & $\leqslant 64$ \\
       \hline
-      \texttt{call} \addr & \addr\ & & $\leqslant 64$\\
+      \texttt{return}                  & 64                 &                 &               & $\leqslant64$  \\
       \hline
-      \texttt{return} & & & $\leqslant64$\\
-      \hline
-      \texttt{push} \size\ \reg & $3$ & \size &\\
+      \texttt{push}                    & 196                & 128             & 0             &  \\
       \hline
     \end{tabular}
   \end{center}
