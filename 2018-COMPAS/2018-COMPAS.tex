@@ -262,10 +262,11 @@ On a un encodage différent pour les constantes pour différentes classes d'inst
 \begin{figure}
   \centering
 \begin{verbatim}
-  let r0 17         ; 0111 000 1000010001 ; 000 encode r0,  17 est encodé sur 10 bits
-boucle:	                                  ; ceci est une étiquette (label)
-  sub2i r0 1        ; 0011 000 01         ; 000 encode r0, 01 encode la constante 1
-  jumpif nz boucle  ; 1011 001 011100111  ; jumpif nz -25, encodé en 16 bits en tout 
+  let r0 17        ; 0111 000 1000010001 ; 000 encode r0,  17 est encodé sur 10 bits
+boucle:	           ; ceci est une étiquette (label)
+  sub2i r0 1       ; 0011 000 01         ; 000 encode r0, 01 encode la constante 1
+  jumpif nz boucle ; 1011 001 011100111  
+;;jumpif nz -25, encodé en 16 bits en tout 
 \end{verbatim}
   \caption{Un exemple de programme assembleur, (une boucle vide) avec son encodage initial}
   \label{fig:exempleasm}
@@ -408,15 +409,15 @@ On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encod
 
 \subsection{Modes d'adressage mémoire}
 \subsubsection{Choix initiaux}
-On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
-Cette affirmation est à relativiser : si par exemple le pc lit les données séquentiellement la plupart du temps, le \texttt{push}, nécessite un pré-decrément, etle post-incrément oblige à affecter deux fois \texttt{sp}. De même la multiplication de matrices est gourmande en arithmétique des compteurs.
-\subsubsection{Améliorations}
-Même avec le dédoublement des compteurs dans le processeur, la plupart des opérations restent coûteuses, surtout le \texttt{push}, qui nécessite de déplacer deux fois un compteur à cause du post-incrément. Une première idée est d'ajouter la possibilité d'écrire en mémoire avec pré-décrément (on a assez de fils pour indiquer à la mémoire un sens de lecture). Ainsi, le \texttt{push} revient à une simple écriture avec pré-décrément, et ne nécessite plus de déplacer de pointeurs.\par
-Un autre problème est l'envoi systématique de $64$ bits pour synchroniser les compteurs. En effet, si un compteur est à \texttt{0x10040}, pour le déplacer à \texttt{0x10000}, il suffit de mettre les 7 premiers bits à 0. On économise l'envoi de 57 bits. On a ainsi un gain énorme sur les petits sauts, comme par exemple les \texttt{jump} dans le programme, qui sont exécutés de nombreuses fois. La table \ref{tab:benchctr} résume les gains obtenus pour les différentes améliorations.
+On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs. Cette affirmation est relativisée en \ref{addr:amel}  
+\subsubsection{Améliorations\label{addr:amel}}
+Même avec le dédoublement des compteurs dans le processeur, la plupart des opérations restent coûteuses, surtout le \texttt{push}, qui nécessite de déplacer deux fois un compteur à cause du post-incrément. Une première idée est d'ajouter la possibilité d'écrire en mémoire avec pré-décrément (on a assez de fils pour indiquer à la mémoire un sens de lecture). Ainsi, le \texttt{push} ne nécessite plus de déplacer de pointeurs.\par
+Un autre problème est l'envoi systématique de $64$ bits pour synchroniser les compteurs. En effet, si un compteur est à \texttt{0x10040}, pour le déplacer à \texttt{0x10000}, il suffit de mettre les 7 premiers bits à 0. On a ainsi un gain énorme (ici 57 bits) sur les petits sauts. La table \ref{tab:costs} résume les gains obtenus pour les différentes améliorations.
 
 \subsection{Enrichir l'ISA ?}
 
-L'ISA présentée ici est assez limitée. Elle nous pousse donc à diviser une opération en plusieurs instructions, ce qui rallonge le code et donc le nombre de bits d'instructions échangés. Voici quelques propositions d'améliorations :
+L'ISA présentée ici est assez limitée. Elle nous pousse donc à diviser une opération en plusieurs instructions, ce qui rallonge le code et donc le nombre de bits d'instructions échangés. Voici quelques propositions d'améliorations.\par
+La principale arithmétique des compteurs est un incrément. Ainsi, en rajoutant des instructions d'incrément de compteurs, on pourrait factoriser \texttt{getctr ctr ri; add2 ri rj; setctr ctr ri} en \texttt{incrctr ctr ri}, gagnant en taille de code, mais aussi l'usage d'un registre. Pour compiler C, on aura aussi besoin d'un accès à la pile indexé par une constante. Enfin, dans une boucle, les \texttt{jump(if)} effectuent des sauts toujours au même endroit. Il serait peut-être intéressant d'avoir des registres \og{} de saut \ \fg{} permettant de stocker l'adresse de saut une fois plutôt que de lire systématiquement une constante à chaque tour de boucle.  
 
 \section{Conclusion et perspectives}
 
