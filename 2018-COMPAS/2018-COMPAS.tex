@@ -1,6 +1,6 @@
 \documentclass[architecture]{compas2018}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\usepackage{url}
 \toappear{1} % Conserver cette ligne pour la version finale
 
 \usepackage{tikz}
@@ -40,21 +40,18 @@
 \sloppy
 
 \begin{abstract}
-Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 16 et 64 bits).
-C'est une contrainte pour l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction dominants.
+Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 8 et 64 bits).
+Cette granularité contraint l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction.
 Or les échanges de données représentent le gros de l'énergie dépensée.
-Cet article fait l'exercice de lever cette contrainte, dans le but de minimiser le nombre de bits échangés entre le processeur et la mémoire.
-Il décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
+Cet article décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
 Ceci permet d'avoir des instructions de taille arbitraire.
 Pour ne pas devoir envoyer une adresse complète à la mémoire à chaque accès, la solution proposée est l'usage de pointeurs auto-incrémentés dupliqués dans la mémoire et le processeur.
 
-Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon (ce qui explique en partie certains choix simplistes).
+Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon.
 Un premier jeu d'instruction a été défini en TD et son encodage choisi à la main.
 Ceci a permis aux étudiants d'écrire en binôme un assembleur et un simulateur, puis plusieurs milliers de lignes de programmes allant du petit noyau de calcul au jeu vidéo et à l'émulateur.
-Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions des instructions en fonction de leur fréquence via des arbres de Huffmann, et les comparer à l'encodage initial.
-On arrive à une taille moyenne d'instruction entre 9 et 15 bits suivants les programmes.
- Ces expérimentations montrent aussi que le code représente une part importante des données transitant entre processeur et mémoire. 
- L'article discute enfin les limites de cette approche, et d'éventuelles solutions pour y remédier.
+Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions des instructions en fonction de leur fréquence, et les comparer à l'encodage initial.
+ Ces expérimentations ont aussi montré les limites de cette première approche, et l'article discute  des solutions pour y remédier.
 \end{abstract}
 
 %=========================================================
@@ -64,8 +61,8 @@ Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de v
 
 \newcommand{\figVonNeumann}{
   \begin{tikzpicture}
-    \node[hwblock, minimum width=15ex,minimum height=15ex] (p) at (0,0)  {Processeur} ;
-    \node[hwblock, minimum width=15ex,minimum height=15ex] (m) at (30ex,0)  {Mémoire} ;
+    \node[hwblock, minimum width=15ex,minimum height=14ex] (p) at (0,0)  {Processeur} ;
+    \node[hwblock, minimum width=15ex,minimum height=14ex] (m) at (30ex,0)  {Mémoire} ;
     \draw[hwbus,->] (p.25) -- (m.155) node[midway,above=1ex]{adresse} node[midway]{/} node[midway, below right]{$w_a$};
     \draw[hwbus,<->] (p.335) -- (m.205) node[midway,below]{données} node[midway]{/} node[midway, above left]{$w_d$};
   \end{tikzpicture}
@@ -79,13 +76,11 @@ Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de v
   \label{fig:mvn} \index{von Neumann}\index{machine de von Neumann}
 \end{figure}
 
-\subsection{Généralités}
-Le jeu d'instruction d'un processeur (Instruction Set Architecture ou ISA) reflète l'état de la loi de Moore à l'époque de sa conception.
+Le jeu d'instruction d'un tel processeur (Instruction Set Architecture ou ISA) reflète l'état de la loi de Moore à l'époque de sa conception.
 Celle-ci se traduit par exemple par un doublement de la quantité de mémoire intégrée sur une puce tous les deux ans.
 Comme il faut bien adresser cette mémoire, le bus mémoire suit, et sa taille ($w_a$ sur la figure) grandit donc d'un bit tous les deux ans.
 Ceci se traduit à son tour par une croissance de la taille des registres qui, dans un processeur, peuvent adresser la mémoire.
-Toutefois, ici, le fétichisme des architectes pour les puissances de 2 intervient, et on a observé une croissance de ces registres par palier: de 8 bits aux temps héroïques à 16 bits dans les années 70, 32 bits dans les années 80, et 64 bits dans les années 2000.
-Les adresses sur 64 bits devraient ainsi suffire pour plusieurs dizaines d'années, mais l'on se gardera bien de faire des pronostics si lointains.
+Toutefois, cette croissance a suivi des puissances de 2: de 8 bits aux temps héroïques à 16 bits dans les années 1970, 32 bits dans les années 1980, et 64 bits dans les années 2000, et sans doute pour encore quelques dizaines d'années.
 
 \iffalse % c'est fort intéressant mais on s'en fout
 La croissance du bus de données a suivi avec du retard, pour plusieurs raisons.
@@ -100,39 +95,40 @@ Mais ces registres sont des vecteurs de données d'au plus 64 bits.
 
 
 
-Une question intéressante, et qui commence à toucher le jeu d'instruction, est l'adressabilité, c'est-à-dire la granularité à laquelle on peut adresser la mémoire.
-L'ancêtre 4004 adressait sa mémoire par cases de 4 bits, ce qui correspondait au besoin du décimal codé en binaire. Le processeur Saturn des calculettes HP était aussi un processeur 4/20 bits.
-La plupart des processeurs (dont les Intel/AMD de nos PC et les ARM de nos gadgets) adressent leur mémoire par octet pour être efficace sur le traitement de texte.
+Une question intéressante, et qui commence à toucher le jeu d'instruction, est  la granularité à laquelle on peut adresser la mémoire.
+L'ancêtre 4004 et le processeur Saturn des calculettes HP adressaient leur mémoire par cases de 4 bits: ceci correspondait au besoin du décimal codé en binaire.
+La plupart des processeurs (dont les Intel/AMD de nos PC et les ARM de nos gadgets) adressent leur mémoire par octet pour être efficaces sur le traitement de texte.
 
-Cela dit, dans un processeur 32 bits, les données de 32 bits doivent avoir des adresses dites alignées, c'est à dire multiples de 4 octets. Un accès non aligné se traduit selon les ISA par une faute ou par un accès beaucoup plus lent.
-
-
-\subsection{Pourquoi pas l'adressabilité au bit près?}
+% \subsection{Pourquoi pas l'adressabilité au bit près?}
 Ceci nous amène à la première constatation. Dès lors que les adresses font 64 bits, on peut parfaitement décider  que le adresses seront des adresses de bits.
-On perd un facteur 8 en quantité de mémoire adressable.
-Ce qui aurait été inacceptable à l'époque des adresses sur 16 bits est indolore pour quelques années avec un espace d'adressage sur 64 bits: il reste tout de même $2^{61}\approx 2.10^{18}$ bits, ou 2 exabits, à adresser.
+On perd juste un facteur 8 en quantité de mémoire adressable.
+Ce qui aurait été inacceptable à l'époque des adresses sur 16 bits est actuellement indolore: avec un espace d'adressage sur 64 bits, il reste tout de même $2^{61}\approx 2.10^{18}$ bits, ou 2 exabits, à adresser.
 
 
-Attention, on parle de l'abstraction offerte par le jeu d'instruction, pas de l'interface physique.
+Attention, on parle ici de l'abstraction offerte par le jeu d'instruction, pas de l'interface physique.
 Les deux sont déjà différentes dans les processeurs actuels.
-Dans le jeu d'instruction AMD64, l'ISA définit une mémoire adressable par octet, avec des contraintes d'alignements pour les accès à des données plus grandes.
-Par contre l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
+Si l'ISA définit une mémoire adressable par octet, l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
+%Ceci explique aussi les contraintes d'alignement pour les données de grande taille.
 
-Certes, passer d'un adressage par octet à un adressage au bit complique légèrement l'interface processeur-cache.
-On peut estimer que cela ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
-Cela dit, dans tout cet article nous ignorons sereinement cette problématique.
-Nous ne remettrons les pieds sur terre que dans la discussion de conclusion.
+Passer d'un adressage par octet à un adressage au bit complique légèrement l'interface processeur-cache:
+on peut estimer que cela ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
 
 
-Mais que gagne-t-on à avoir une adresse pour chaque bit?  On peut manipuler des données au bit près.
-Surtout, la tailles des données peut être variable au bit près.
+Ce qu'on gagne à avoir une adresse pour chaque bit, c'est que la tailles des données et des instructions peut être variable au bit près: on peut espérer n'envoyer que les bits utiles.
 Comme exemple d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
-Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses principales motivations reste: les transferts de données sont extrêmement coûteux.
-D'après Dally, en technologie 28nm, le calcul d'une multiplication-addition flottante sur des données 64 bits coûte 50pJ, et l'accès aux registres sur puce est du même ordre de grandeur, alors qu'une lecture de 64 bits de la DRAM coûte 4000pJ.
-\todo{F2D: citation}
+Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses  motivations reste: 
+d'après Dally, \emph{fetching operands costs more than computing on them}, et l'on parle d'un facteur 1000 \cite{Dally:SC2010}.
+
 
 Il y a aussi des applications, comme les réseaux de neurones, qui se contentent très bien de données sur de très petites précision, voire des données binaires \cite{AndriCRB16,AlemdarEtAl2017:TernaryCNN,AmiriEtAl2018:mixedPrecCNN,Preusser:DATE2018:heteroCNN}. 
 
+Attention, il ne faut pas que l'on ait à envoyer 64 bits d'adresse pour chaque bit de donnée échangé, ce qui serait bien pire que le faire pour chaque octet. 
+Reprendre la figure \ref{fig:mvn} en fixant juste $w_d=1$ serait contre-productif.
+
+Ce travail essaye d'imaginer une architecture (au sens ISA) dans laquelle on peut tailler instructions et données au bit près, et ne payer que pour les bits effectivement transférés.
+Il a été réalisé dans le cadre de l'enseignement de l'architecture en L3 à l'ENS-Lyon: les développements et les expériences présentées sont l'aboutissement de séances de travaux dirigés et de devoirs à la maison\footnote{Le lecteur trouvera les supports correspondant ici: \url{perso.citi-lab.fr/fdedinec/enseignement/2017/ASR1/}}. 
+
+\iffalse
 \subsection{Pourquoi pas un jeu d'instruction au bit près?}
 
 Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
@@ -145,7 +141,7 @@ Résumé des objectifs pédagogiques du cours ASR1
 \subsection{Plan}
 
 \todo{F2D}
-
+\fi
 
 
 \section{Architecture générale et interface mémoire}
@@ -154,15 +150,18 @@ Les données passent en série, bit à bit, sur le fil \texttt{D}.
 Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
 Pour ne pas avoir à transmettre une adresse de $n$ nbits par bit de donnée, les adresses sont le plus souvent implicites.
 Dans ce but, on a 4 compteurs, répliqués dans le processeur et la mémoire.
-Par exemple le pointeur de programme, PC, est l'un de ces compteurs.
+Le pointeur de programme, PC, est l'un de ces compteurs.
+Il s'autoincrémente, classiquement, au cours de la lecture d'une instruction et pour passer à l'instruction suivante.
+
 Pour lire une donnée, le processeur sélectionne un des compteurs en positionnant les deux bits  \texttt{Select}.
 Puis il lève \texttt{Read}.
 Tant que \texttt{Read} vaut 1, le compteur sélectionné s'incrémente (côté processeur comme côté mémoire) et les bits qu'il pointe sont transférés sur le fil \texttt{D}.
 Lorsque le processeur décide qu'il a lu toute une donnée, il baisse \texttt{Read}.
+Le mécanisme est similaire en cas d'écriture.
 
-Ce mécanisme fonctionne de manière similaire en cas d'écriture.
 Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
 Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
+Si le compteur était le PC, on a réalisé un saut.
 
 Un intérêt de cette interface est qu'elle ne dépend pas ni de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
 \begin{figure}[h]
@@ -206,7 +205,7 @@ Si par contre on s'intéresse aux nombre de transitions sur les fils (une métri
 
 \begin{itemize}
 \item Dans la lecture de données consécutives en mémoire, notre proposition fait l'économie de toutes les transitions sur le bus d'adresse.
-  En particulier, la lecture des instructions d'un programme, en dehors des branchements,  ne demande aucune transmission d'adresse.
+  En particulier, la lecture des instructions d'un programme, hors branchements,  ne demande aucune transmission d'adresse.
 \item Adresses comme données peuvent être transmises au bit près.
 \item Par contre on a une transition d'horloge par bit transmis, au lieu d'une transition d'horloge pour $w_a$ ou $w_d$ bits.
 \end{itemize}
@@ -228,7 +227,7 @@ Il est rediscuté en \ref{sec:amelioration}.
 
 
 \section{Présentation du jeu d'instruction initial}
-Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
+Le jeu d'instruction décrit dans cette section est l'aboutissement des deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
 Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 
 
@@ -352,8 +351,11 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
 # Puis éditer à la main pour compter les bits, argh.
 
 #pour le .bin
-./asm.py --loadhuffman mult.huff -o prog/mult.huff.bin prog/mult.s 
-./emu/emu -lh mult.huff -i prog/mult.huff.bin
+./asm.py  prog/mult.s -b --loadhuffman mult.huff -o prog/mult.huff.bin 
+
+# Et maintenant la comparaison 
+./emu/emu -s  -i prog/mult.bin
+./emu/emu -s -lh mult.huff -i prog/mult.huff.bin
 
 \fi
 
@@ -369,7 +371,7 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
     \hline
     \hline
     binmult,init & 10    & 125  & 12,5 & 89,4\% &        &        &          & 10,6\% & 415   \\
-    binmult, opt &       & 113  & 11.3 &        &        &        &          &                \\
+    binmult, opt &       & 113  & 11.3 &        &        &        &          &               \\
         \hline
     \hline
   \end{tabular}
