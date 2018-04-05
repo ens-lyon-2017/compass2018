@@ -349,16 +349,17 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
     \hline
     & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exec.}                    \\
     \hline
+
     
-    benchmark             & instr                                     & bits & bpi & prog & data R & data W & counters & branch & total \\
+    benchmark    & instr & bits & bpi  & prog   & data R & data W & counters & branch & total \\
     \hline
     \hline
-    binmult,init & 12                                        & 104  & 8,6 &      &                                             \\
-    binmult, opt &                                           &      &     &                                                    \\
+    binmult,init & 10    & 136  & 13,6 & 89,4\% &        &        &          & 10,6\% & 415   \\
+    binmult, opt &       &      &      &                                                      \\
         \hline
     \hline
-    binmult,init &                                           &      &     &                                                    \\
-    binmult, opt &                                           &      &     &                                                    \\
+    binmult,init &       &      &      &                                                      \\
+    binmult, opt &       &      &      &                                                      \\
         \hline
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
