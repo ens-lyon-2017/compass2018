@@ -316,9 +316,9 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 
 
 \section{Expériences}
-
 Pour une petite suite de benchmarks (écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture), nous avons réalisé les mesures suivantes.
 
+\subsection{Codage de Huffman}
 La première expérience consiste à utiliser l'encodage initial.
 Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
 D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
@@ -380,18 +380,16 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
   \label{tab:bitcounts}
 \end{table}
 
+
+\subsection{Modes d'adressage mémoire}
+\subsubsection{Choix initiaux}
+On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs. Cette affirmation est relativisée en \ref{addr:amel}  
+\subsubsection{Améliorations\label{addr:amel}}
+Même avec le dédoublement des compteurs dans le processeur, la plupart des opérations restent coûteuses, surtout le \texttt{push}, qui nécessite de déplacer deux fois un compteur à cause du post-incrément. Une première idée est d'ajouter la possibilité d'écrire en mémoire avec pré-décrément (on a assez de fils pour indiquer à la mémoire un sens de lecture). Ainsi, le \texttt{push} ne nécessite plus de déplacer de pointeurs.\par
+Un autre problème est l'envoi systématique de $64$ bits pour synchroniser les compteurs. En effet, si un compteur est à \texttt{0x10040}, pour le déplacer à \texttt{0x10000}, il suffit de mettre les 7 premiers bits à 0. On a ainsi un gain énorme (ici 57 bits) sur les petits sauts. La table \ref{tab:costs} résume les gains obtenus pour les différentes améliorations.
+
+
 \section{Améliorations et pistes d'améliorations \label{sec:amelioration}}
-
-Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
-\begin{enumerate}
-\item les instructions du programme (code lu par le processeur).
-\item les données explicitement lues ou écrites (à l'aide de \texttt{readze}, par exemple)
-\item Les bits d'adresses (typiquement, l'affectation de compteurs)
-\end{enumerate}
-
-Par exemple, \texttt{jump 0x1f68} va être lue par le processeur : $4$ bits plus $18$ bits (une constante sur $16$ bits), puis pc + \texttt{0x1f68} va être écrit dans le pc, $64$ bits vont donc transiter. On a donc un total de $22$ bits d'instruction, $0$ bit de données et $64$ bits de compteurs.
-La table \ref{tab:costs} résume le coût de chaque opération.
-
 \subsection{Combien de registres ?}
 Le nombre de registres est un compromis entre le nombre d'accès à la pile en mémoire et la taille des instructions :
 d'un côté, doubler le nombre de registres demande d'ajouter un sinon deux bits à presque toutes les instructions;
@@ -406,13 +404,6 @@ Elles offrent également des mécanismes qui exposent dans le jeu d'instruction 
 
 On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encodage compact des registres les plus utilisés.
 \todo{relire tout cela}
-
-\subsection{Modes d'adressage mémoire}
-\subsubsection{Choix initiaux}
-On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs. Cette affirmation est relativisée en \ref{addr:amel}  
-\subsubsection{Améliorations\label{addr:amel}}
-Même avec le dédoublement des compteurs dans le processeur, la plupart des opérations restent coûteuses, surtout le \texttt{push}, qui nécessite de déplacer deux fois un compteur à cause du post-incrément. Une première idée est d'ajouter la possibilité d'écrire en mémoire avec pré-décrément (on a assez de fils pour indiquer à la mémoire un sens de lecture). Ainsi, le \texttt{push} ne nécessite plus de déplacer de pointeurs.\par
-Un autre problème est l'envoi systématique de $64$ bits pour synchroniser les compteurs. En effet, si un compteur est à \texttt{0x10040}, pour le déplacer à \texttt{0x10000}, il suffit de mettre les 7 premiers bits à 0. On a ainsi un gain énorme (ici 57 bits) sur les petits sauts. La table \ref{tab:costs} résume les gains obtenus pour les différentes améliorations.
 
 \subsection{Enrichir l'ISA ?}
 
@@ -432,7 +423,14 @@ La principale arithmétique des compteurs est un incrément. Ainsi, en rajoutant
 \begin{table}[!h]
   \caption{Coûts des opérations}
   \label{tab:costs}
-  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
+  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits.
+  On distinguera trois types de bits échangées :
+  \begin{enumerate}
+  \item les instructions du programme (code lu par le processeur).
+  \item les données explicitement lues ou écrites (à l'aide de \texttt{readze}, par exemple)
+  \item Les bits d'adresses (typiquement, l'affectation de compteurs)
+  \end{enumerate}
+La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
   \begin{center}
   \begin{tabular}{|l|c|c|c|}
     \hline  
