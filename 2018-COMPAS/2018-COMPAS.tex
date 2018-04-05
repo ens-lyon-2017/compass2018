@@ -405,77 +405,16 @@ On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encod
 \todo{relire tout cela}
 
 \subsection{Modes d'adressage mémoire}
-\subsection{Bits de compteurs}
-\subsubsection{choix initiaux}
+\subsubsection{Choix initiaux}
 On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs.\par
-Cette affirmation est à relativiser : par exemple, le pc lit les données séquentiellement la plupart du temps. De même, dans les expériences, un écran avait été mappé sur la mémoire, et on pouvait l'effacer en écrivant plusieurs fois \texttt{0x0} à son adresse. Cependant, un contre-exemple très souvent utilisé est le \texttt{push}, qui nécessite un pré-decrément (le post-incrément oblige à affecter deux fois \texttt{sp}) ou encore la multiplication de matrices, gourmande en compteurs.
-\subsubsection{améliorations}
-La première amélioration, proposée dès le départ est de conserver une copie de chaque compteur dans le processeur. Ainsi, les échanges de bits de compteurs ne sont nécessaires que pour synchroniser les compteurs du processeur et de la mémoire : \texttt{getctr} ne coûte plus aucun bit de compteur, on a aussi un gain sur le \texttt{push}
-Ensuite, lors d'une affectation de compteurs, on n'est pas obligé d'écrire tous les bits s'ils sont envoyés poids faible d'abord. Si on envoie $n\leqslant 64$ bits à la mémoire, la mémoire peut écrire ces $n$ bits et remplire les $64-n$ autres avec des zéros. Cela diminuerait grandement le coût des affectations du pc, très proche du début de la mémoire (le code est stocké en \texttt{0x0}). Une autre idée, plus générale, serait de ne pas toucher aux $64-n$ derniers bits. On aurait un gain lors d'affectations proches en mémoire (même si bien sûr on ne peut rien garantir : \texttt{0x1000000 - 0x1 = 0xffffff})\par
-Une autre amélioration, non-implémentée, serait d'ajouter des instructions d'incrémentation des compteurs par un registre ou une constante. On remplacerait les trois instructions \texttt{getctr a0 r0 ; add2 r0 r1 ; setctr a0 r0} par l'unique \texttt{incrctr a0 r0}. Si on ne gagne pas sur le nombre de bits de compteurs échangés (toujours $64$), cette instruction est assez facile à implanter en machine, on factorise un trio d'instruction assez présent dans la boucle interne de nombreux programmes (par exemple la multiplication matricielle) en une seule, et on gagne un registre.
+Cette affirmation est à relativiser : si par exemple le pc lit les données séquentiellement la plupart du temps, le \texttt{push}, nécessite un pré-decrément, etle post-incrément oblige à affecter deux fois \texttt{sp}. De même la multiplication de matrices est gourmande en arithmétique des compteurs.
+\subsubsection{Améliorations}
+Même avec le dédoublement des compteurs dans le processeur, la plupart des opérations restent coûteuses, surtout le \texttt{push}, qui nécessite de déplacer deux fois un compteur à cause du post-incrément. Une première idée est d'ajouter la possibilité d'écrire en mémoire avec pré-décrément (on a assez de fils pour indiquer à la mémoire un sens de lecture). Ainsi, le \texttt{push} revient à une simple écriture avec pré-décrément, et ne nécessite plus de déplacer de pointeurs.\par
+Un autre problème est l'envoi systématique de $64$ bits pour synchroniser les compteurs. En effet, si un compteur est à \texttt{0x10040}, pour le déplacer à \texttt{0x10000}, il suffit de mettre les 7 premiers bits à 0. On économise l'envoi de 57 bits. On a ainsi un gain énorme sur les petits sauts, comme par exemple les \texttt{jump} dans le programme, qui sont exécutés de nombreuses fois. La table \ref{tab:benchctr} résume les gains obtenus pour les différentes améliorations.
 
-\subsubsection{les adresses de jump}
+\subsection{Enrichir l'ISA ?}
 
-\subsubsection{le problème de la pile}
-Si avec le post-incrément, le \texttt{pull} ne coûte rien, dans la version naïve, le push est extrêmement coûteux : \texttt{push 32 r0} fait d'abord transiter $7$ bits de la mémoire au processeur pour l'opérande, $3$ pour le registre. L'instruction est lue. Il faudra ensuite faire reculer le pointeur de pile de $32$ bits : $64$ bits pour récupérer \texttt{sp}, $64$ autres pour l'affecter. Les $32$ bits de \texttt{r0} sont écrits, puis on fait de nouveau reculer le pointeur de pile : $64$ bits. Soit un total d'instructions lues de $10$, $32$ bits de lus, et $192$ bits de compteurs.\par
-C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine la quantité de registres nécessaire. La première amélioration proposée permet de faire descendre le coût du \texttt{push} à 128 bits, et plus si on décide d'un endroit adéquat pour placer le fond de la pile. Cependant, un gain énorme serait d'autoriser l'écriture avec pré-décrément : en écrivant les bits un à un à l'envers et en pré-décrément sur sp, on n'a plus besoin d'affecter sp. Le nombre de bits d'adresse dus au push retomberait à 0. Une manière assez simple de l'implémenter et de faire transiter le sens d'écriture sur le fil \texttt{Read} : 0 indiquerait post-incrément, et 1 pré-décrément. On pourrait même alors imaginer un \texttt{push} prenant en argument un compteur. Ainsi, chaque compteur pourrait devenir une pile.
-
-\begin{table}[!h]
-  \caption{Coûts des opérations}
-  \label{tab:costs}
-  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
-  \begin{center}
-  \begin{tabular}{|l|c|c|c|}
-    \hline  
-    type                               & bits d'instruction & bits de données & bits de compteurs              \\
-    \hline  
-    \hline
-    \texttt{arith} \reg\ \reg\         & $6$                &                 &                                \\
-    \hline
-    \texttt{arith} \reg\ \reg\ \reg\   & $9$                &                 &                                \\
-    \hline
-    \texttt{arith} \reg\ \const\       & $3$ + \const       &                 &                                \\
-    \hline
-    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const       &                 &                                \\
-    \hline
-    \texttt{r/w} \ctr\ \size\ \reg     & $2$ + \size\ + $3$ & \size           &                                \\
-    \hline
-    \texttt{get-,setctr} \ctr\ \reg\   & $2$ + $3$          &                 & $64$                           \\
-    \hline
-    \texttt{jump}                      & \addr\             &                 & $64$                           \\
-    \hline
-    \texttt{jumpif} \cond              & $3$ + \addr\       &                 & $0$ ou $64$                    \\
-    \hline
-    \texttt{call} \addr                & \addr\             &                 & $64$                           \\
-    \hline
-    \texttt{return}                    &                    &                 & $64$                           \\
-    \hline
-    \texttt{push} \size\ \reg          & $3$                & \size           & $192$                          \\
-    \hline
-  \end{tabular}
-  \end{center}
-Tableau d'amélioration du nombre de bits de compteurs.
-  \begin{center}
-    \begin{tabular}{|l|c|c|c|c|}
-      \hline  
-      type                             & sans dédoublement  & initial         & pré-décrément & syncr futée    \\
-      \hline  
-      \hline
-      \texttt{getctr}                  & $64$               & 0               &               &                \\
-      \hline
-      \texttt{setctr}                  & 64                 &                 &               & $\leqslant 64$ \\
-      \hline
-      \texttt{jump(if)}                & 64                 &                 &               & $\leqslant 64$ \\
-      \hline
-      \texttt{call}                    & 128                & 64              &               & $\leqslant 64$ \\
-      \hline
-      \texttt{return}                  & 64                 &                 &               & $\leqslant64$  \\
-      \hline
-      \texttt{push}                    & 196                & 128             & 0             &  \\
-      \hline
-    \end{tabular}
-  \end{center}
-\end{table}
+L'ISA présentée ici est assez limitée. Elle nous pousse donc à diviser une opération en plusieurs instructions, ce qui rallonge le code et donc le nombre de bits d'instructions échangés. Voici quelques propositions d'améliorations :
 
 \section{Conclusion et perspectives}
 
@@ -485,6 +424,81 @@ Tableau d'amélioration du nombre de bits de compteurs.
 
 - un processeur dont l'encodage est reconfigurable? 
 \bibliography{biblio.bib}
+
+
+\begin{table}[!h]
+  \caption{Coûts des opérations}
+  \label{tab:costs}
+  On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits. La taille de l'opcode d'une instruction étant variable, il faut à chaque fois l'ajouter dans les instructions lues.
+  \begin{center}
+  \begin{tabular}{|l|c|c|c|}
+    \hline  
+    type & bits d'instruction & bits de données & bits de compteurs \\
+    \hline  
+    \hline
+    \texttt{arith} \reg\ \reg\ & $6$                &    &      \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \reg\   & $9$   &    &      \\
+    \hline
+    \texttt{arith} \reg\ \const\       & $3$ + \const       &    &      \\
+    \hline
+    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const       &    &      \\
+    \hline
+    \texttt{r/w} \ctr\ \size\ \reg     & $2$ + \size\ + $3$ & \size           &      \\
+    \hline
+    \texttt{get-,setctr} \ctr\ \reg\   & $2$ + $3$          &    & $64$              \\
+    \hline
+    \texttt{jump}         & \addr\             &    & $64$              \\
+    \hline
+    \texttt{jumpif} \cond & $3$ + \addr\       &    & $0$ ou $64$       \\
+    \hline
+    \texttt{call} \addr   & \addr\             &    & $64$              \\
+    \hline
+    \texttt{return}       &       &    & $64$              \\
+    \hline
+    \texttt{push} \size\ \reg          & $3$   & \size           & $192$             \\
+    \hline
+  \end{tabular}
+  \end{center}
+Tableau d'amélioration du nombre de bits de compteurs.
+  \begin{center}
+    \begin{tabular}{|l|c|c|c|c|}
+      \hline  
+      type   & sans dédoublement  & initial         & pré-décrément & syncr futée    \\
+      \hline  
+      \hline
+      \texttt{getctr}     & 64  & 0   &   &   \\
+      \hline
+      \texttt{setctr}     & 64  &     &   & $\leqslant 64$ \\
+      \hline
+      \texttt{jump(if)}   & 64  &     &   & $\leqslant 64$ \\
+      \hline
+      \texttt{call}       & 128 & 64  &   & $\leqslant 64$ \\
+      \hline
+      \texttt{return}     & 64  &     &   & $\leqslant64$  \\
+      \hline
+      \texttt{push}       & 196 & 128 & 0 &  \\
+      \hline
+    \end{tabular}
+  \end{center}
+  Résultat des améliorations sur les benchmarks
+  \begin{center}
+    \begin{tabular}{|l|c|c|c|c|}
+      
+      \hline  
+      benchmark   & sans dédoubl.  & avec dédoubl.  & pré-décrément & syncro. futée    \\
+      \hline  
+      \hline
+      binmult & & & &\\
+      \hline
+      matmult & & & & \\
+      \hline
+      chip8 & & & &\\
+      \hline
+    \end{tabular}
+  \end{center}
+
+\end{table}
 
 
 \appendix
