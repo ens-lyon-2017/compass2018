@@ -427,30 +427,30 @@ C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine l
   \begin{center}
   \begin{tabular}{|l|c|c|c|}
     \hline  
-    type  & bits d'instruction & bits de données & bits de compteurs \\
+    type                               & bits d'instruction & bits de données & bits de compteurs              \\
     \hline  
     \hline
-    \texttt{arith} \reg\ \reg\ &  $6$ & & \\
+    \texttt{arith} \reg\ \reg\         & $6$                &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \reg\ \reg\ & $9$ & & \\
+    \texttt{arith} \reg\ \reg\ \reg\   & $9$                &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \const\ & $3$ + \const & & \\
+    \texttt{arith} \reg\ \const\       & $3$ + \const       &                 &                                \\
     \hline
-    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const & & \\
+    \texttt{arith} \reg\ \reg\ \const\ & $6$ + \const       &                 &                                \\
     \hline
-    \texttt{r/w} \ctr\ \size\ \reg & $2$ + \size\ + $3$ & \size & \\
+    \texttt{r/w} \ctr\ \size\ \reg     & $2$ + \size\ + $3$ & \size           &                                \\
     \hline
-    \texttt{get-,setctr} \ctr\ \reg\ & $2$ + $3$ & & $64$ \\
+    \texttt{get-,setctr} \ctr\ \reg\   & $2$ + $3$          &                 & $64$                           \\
     \hline
-    \texttt{jump} & \addr\ & & $64$ \\
+    \texttt{jump}                      & \addr\             &                 & $64$                           \\
     \hline
-    \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $64$\\
+    \texttt{jumpif} \cond              & $3$ + \addr\       &                 & $0$ ou $64$                    \\
     \hline
-    \texttt{call} \addr & \addr\ & & $64$\\
+    \texttt{call} \addr                & \addr\             &                 & $64$                           \\
     \hline
-    \texttt{return} & & & $64$\\
+    \texttt{return}                    &                    &                 & $64$                           \\
     \hline
-    \texttt{push} \size\ \reg & $3$ & \size & $192$\\
+    \texttt{push} \size\ \reg          & $3$                & \size           & $192$                          \\
     \hline
   \end{tabular}
   \end{center}
@@ -458,20 +458,20 @@ Tableau d'amélioration du nombre de bits de compteurs.
   \begin{center}
     \begin{tabular}{|l|c|c|c|c|}
       \hline  
-      type  & sans dédoublement & initial & pré-décrément & syncr futée  \\
+      type                             & sans dédoublement  & initial         & pré-décrément & syncr futée    \\
       \hline  
       \hline
-      \texttt{getctr} & $64$ & 0 & & \\
+      \texttt{getctr}                  & $64$               & 0               &               &                \\
       \hline
-      \texttt{setctr} & 64 & & & $\leqslant 64$ \\
+      \texttt{setctr}                  & 64                 &                 &               & $\leqslant 64$ \\
       \hline
-      \texttt{jump(if)} & 64 & & & $\leqslant 64$\\
+      \texttt{jump(if)}                & 64                 &                 &               & $\leqslant 64$ \\
       \hline
-      \texttt{call} & 128 & 64 & & $\leqslant 64$\\
+      \texttt{call}                    & 128                & 64              &               & $\leqslant 64$ \\
       \hline
-      \texttt{return} & 64 & & & $\leqslant64$\\
+      \texttt{return}                  & 64                 &                 &               & $\leqslant64$  \\
       \hline
-      \texttt{push} & 196 & 128 & 0 & &
+      \texttt{push}                    & 196                & 128             & 0             &  \\
       \hline
     \end{tabular}
   \end{center}
