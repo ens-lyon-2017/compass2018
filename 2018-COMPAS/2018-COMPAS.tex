@@ -135,6 +135,7 @@ Il y a aussi des applications, comme les réseaux de neurones, qui se contentent
 
 \subsection{Pourquoi pas un jeu d'instruction au bit près?}
 
+Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
 \todo{F2D}
 
 \subsection{Contexte de ce travail}
@@ -146,11 +147,8 @@ Résumé des objectifs pédagogiques du cours ASR1
 \todo{F2D}
 
 
-\section{Présentation du jeu d'instruction initial}
-Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
-Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 
-\subsection{Architecture générale et interface mémoire}
+\section{Architecture générale et interface mémoire}
 Pour donner une interface simple à l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
 Les données passent en série, bit à bit, sur le fil \texttt{D}.
 Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
@@ -221,9 +219,22 @@ Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'archite
 Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
 Il est rediscuté en \ref{sec:amelioration}. 
 
-\subsection{Généralités sur les jeux d'instructions}
-Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
-\todo{blabla}
+
+
+
+
+
+
+
+
+\section{Présentation du jeu d'instruction initial}
+Le jeu d'instruction décrit dans cette section est l'aboutissement de deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
+Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
+
+
+% \subsection{Généralités sur les jeux d'instructions}
+% Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
+% \todo{blabla}
 
 \subsection{Format général des instructions}
 Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
@@ -339,6 +350,10 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
     benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
                  &                     &            & programme & données                         \\
     \hline
+    \hline
+    binmult,init &                     &            &           &                                 \\
+    binmult, opt &                     &            &           &                                 \\
+        \hline
     \hline
     binmult,init &                     &            &           &                                 \\
     binmult, opt &                     &            &           &                                 \\
