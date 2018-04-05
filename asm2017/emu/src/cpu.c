@@ -263,7 +263,7 @@ static void jump(cpu_t *cpu)
 	int64_t diff = get(addr, NULL);
 
 	/* Deduce "diff" bits from the statistics to balance the increment
-	   performed by cpu_execute() */ 
+	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
 
 	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
@@ -375,8 +375,9 @@ static void push(cpu_t *cpu)
 	cpu->ptr[SP] -= size;
 
 	/* TODO: Use a proper exception when raising stack overflow */
-	if(cpu->ptr[SP] < cpu->mem->text) fatal("Stack overflow (SP = %lu) "
-		"at PC = %lu\n", cpu->ptr[SP], cpu->ptr[PC]);
+	if((int64_t)cpu->ptr < 0 || cpu->ptr[SP] < cpu->mem->text)
+		fatal("Stack overflow (SP = %lu) at PC = %lu\n", cpu->ptr[SP],
+		cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
 
 	write_bits_count += size;

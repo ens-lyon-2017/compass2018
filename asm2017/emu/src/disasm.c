@@ -34,15 +34,15 @@ static uint8_t instr_set_dynamic_alloc = 0;
    fifth letter is an element of the ctgy_t enumeration and classifies the
    instruction. The mnemonic is read starting at index 6. */
 static const char instructions[37][16] = {
-	"rr- A add2", "rl- A add2i", "rr- A sub2", "rl- A sub2i",
-	"rr- T cmp", "rc- T cmpi", "rr- L let", "rc- L leti",
-	"drh A shift", "psr M readze", "psr M readse", "a-- J jump",
-	"oa- J jumpif", "rr- A or2", "rl- A or2i", "rr- A and2",
-	"rl- A and2i", "psr M write", "a-- J call", "pr- C setctr",
-	"pr- C getctr", "sr- M push", "--- J return", "rrr A add3",
-	"rrl A add3i", "rrr A sub3", "rrl A sub3i", "rrr A and3",
-	"rrl A and3i", "rrr A or3", "rrl A or3i", "rrr A xor3",
-	"rrl A xor3i", "rrh A asr3", "l-- C sleep", "r-- A rand",
+	"rr- A add2",	"rl- A add2i",	"rr- A sub2",	"rl- A sub2i",
+	"rr- T cmp",	"rc- T cmpi",	"rr- L let",	"rc- L leti",
+	"drh A shift",	"psr M readze", "psr M readse",	"a-- J jump",
+	"oa- J jumpif",	"rr- A or2",	"rl- A or2i",	"rr- A and2",
+	"rl- A and2i",	"psr M write",	"a-- J call",	"pr- C setctr",
+	"pr- C getctr",	"sr- M push",	"--- J return",	"rrr A add3",
+	"rrl A add3i",	"rrr A sub3",	"rrl A sub3i",	"rrr A and3",
+	"rrl A and3i",	"rrr A or3",	"rrl A or3i",	"rrr A xor3",
+	"rrl A xor3i",	"rrh A asr3",	"l-- C sleep",	"r-- A rand",
 	"--- C (res)",
 };
 
@@ -78,11 +78,13 @@ uint load_encoding(const char *filename)
 	char opcode_str[128];
 	uint64_t opcode;
 
-	for (int i = 0; i < 36; i++)
+	for (int i = 0; i < 37; i++)
 	{
-		fscanf(huffman_f, "%63[^ ] %u %u %127[01]\n", mnemonic, &iid, &size, opcode_str);
+		fscanf(huffman_f, "%63[^ ] %u %u %127[01]\n", mnemonic, &iid,
+			&size, opcode_str);
 
-		fprintf(stderr, "%s %u %u %s\n", mnemonic, iid, size, opcode_str);
+		fprintf(stderr, "%s %u %u %s\n", mnemonic, iid, size,
+			opcode_str);
 
 		/* Build up the integer representation of that opcode */
 		opcode = 0;

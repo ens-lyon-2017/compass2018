@@ -250,7 +250,7 @@ uint64_t memory_read(memory_t *mem, uint64_t address, size_t n)
 	{
 		uint64_t word = htobe64(mem->mem[base]);
 
-		/* In some cases the shift below U.B., so we check */
+		/* In some cases the shift below is U.B., so we check */
 		if(n == 64) return word;
 		return (word >> (64 - right)) & ((1ul << n) - 1);
 	}
