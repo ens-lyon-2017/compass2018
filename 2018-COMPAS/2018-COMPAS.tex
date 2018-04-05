@@ -309,7 +309,7 @@ On peut émuler une instruction de lecture/écriture mémoire d'un processeur cl
 Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendante en mémoire: 
 \begin{itemize}
 \item \texttt{push} \emph{size} \emph{reg} réalise: \\
-  $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}\\ \texttt{write}  \textit{sp} \textit{size} \textit{reg} \\   $\mathit{sp}\leftarrow \mathit{sp}-\mathit{size}$\\ \texttt{setctr} \textit{sp}
+   \texttt{setctr} \textit{sp} (\textit{sp} - \textit{size})\\ \texttt{write}  \textit{sp} \textit{size} \textit{reg} \\ \texttt{setctr} \textit{sp} (\textit{sp} - \textit{size})
 \item \texttt{pop} \emph{size} \emph{reg} est un raccourci offert par l'assembleur pour \\\texttt{readze} \textit{sp} \emph{size} \emph{reg}\\
   
 \end{itemize}
