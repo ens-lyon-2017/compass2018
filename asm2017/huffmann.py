@@ -90,3 +90,5 @@ if __name__ == "__main__":
     print(max([len(c) for c in codes]))
     for (i, c) in enumerate(codes):
         print(items[i], i, len(c), c)
+        
+    print("pop", "None", len(codes[9])+2, codes[9]+"01") 
