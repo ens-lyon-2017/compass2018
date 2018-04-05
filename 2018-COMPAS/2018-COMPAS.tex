@@ -340,23 +340,25 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
   \label{tab:opcounts}
 \end{table}
 
-
+\texttt{binmult} est un programme qui réalise une multiplication d'entiers non signés 64 bits par additions et décalages. Le programme fait 104 bits dont 69 pour le coeur de boucle
 
 
 \begin{table}
   \centering
-  \begin{tabular}{|c||c|c||c|c|}
+  \begin{tabular}{|c||c|c|c||c|c|c|c|c||c|}
     \hline
-    benchmark    & taille du programme & bit/instr. & \multicolumn{2}{c|}{bits échangés à l'exec.} \\
-                 &                     &            & programme & données                         \\
+    & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exec.}                    \\
+    \hline
+    
+    benchmark             & instr                                     & bits & bpi & prog & data R & data W & counters & branch & total \\
     \hline
     \hline
-    binmult,init &                     &            &           &                                 \\
-    binmult, opt &                     &            &           &                                 \\
+    binmult,init & 12                                        & 104  & 8,6 &      &                                             \\
+    binmult, opt &                                           &      &     &                                                    \\
         \hline
     \hline
-    binmult,init &                     &            &           &                                 \\
-    binmult, opt &                     &            &           &                                 \\
+    binmult,init &                                           &      &     &                                                    \\
+    binmult, opt &                                           &      &     &                                                    \\
         \hline
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
