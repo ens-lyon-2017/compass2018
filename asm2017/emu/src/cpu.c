@@ -65,17 +65,10 @@ static size_t counts[DISASM_INS_COUNT] = { 0 };
 */
 static uint instruction_bits_count = 0;
 
-/* Number of bits read by `readse` and `readze` */
-static uint read_bits_count = 0;
-/* Number of bits written by `write` */
-static uint write_bits_count = 0;
-/* Number of bits exchanged during calls to `getctr` and `setctr` */
-static uint ctr_access_bits_count = 0;
-/* Number of bits sent to the memroy when executing `return` */
-static uint call_return_bits_count = 0;
-/* Each time a jump is executed, the number of bits sent to the memory to
-   give the new PC. */
-static uint jump_bits_count = 0;
+/* Number of bits exchanged via read/write instructions. */
+static uint read_write_bits_count = 0;
+/* Number of bits sent to the memroy to synchronize counters. */
+static uint counter_sync_bits_count = 0;
 
 /*
 	set_flags()
@@ -243,7 +236,7 @@ static void readze(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	read_bits_count += size;
+	read_write_bits_count += size;
 }
 
 static void readse(cpu_t *cpu)
@@ -255,7 +248,7 @@ static void readse(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	read_bits_count += size;
+	read_write_bits_count += size;
 }
 
 static void jump(cpu_t *cpu)
@@ -266,7 +259,7 @@ static void jump(cpu_t *cpu)
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
 
-	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
+	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
@@ -287,7 +280,7 @@ static void jumpif(cpu_t *cpu)
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
 
-	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
+	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
@@ -331,7 +324,7 @@ static void _write(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	write_bits_count += size;
+	read_write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -340,7 +333,7 @@ static void _write(cpu_t *cpu)
 static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
-	call_return_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
+	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->r[7] = cpu->ptr[PC];
 
 	/* This is a jump, so we also need to correct the statistics */
@@ -355,7 +348,7 @@ static void setctr(cpu_t *cpu)
 	if(ptr == PC) instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
 
 	/* Changes to the counters must be passed on to the memory */
-	ctr_access_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
+	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
 
 	cpu->ptr[ptr] = cpu->r[rs];
 
@@ -380,7 +373,7 @@ static void push(cpu_t *cpu)
 		cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
 
-	write_bits_count += size;
+	read_write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -391,7 +384,7 @@ static void _return(cpu_t *cpu)
 	/* Cancel out the yet-to-happen automatic increase */
 	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 
-	call_return_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
+	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->ptr[PC] = cpu->r[7];
 
 	/* The 64 bits from r7 indicating the value of the new PC are sent */
@@ -581,27 +574,12 @@ uint cpu_instruction_bits_count(void)
 	return instruction_bits_count;
 }
 
-uint cpu_read_bits_count(void)
+uint cpu_read_write_bits_count(void)
 {
-	return read_bits_count;
+	return read_write_bits_count;
 }
 
-uint cpu_write_bits_count(void)
+uint cpu_counter_sync_bits_count(void)
 {
-	return write_bits_count;
-}
-
-uint cpu_ctr_access_bits_count(void)
-{
-	return ctr_access_bits_count;
-}
-
-uint cpu_call_return_bits_count(void)
-{
-	return call_return_bits_count;
-}
-
-uint cpu_jump_bits_count(void)
-{
-    return jump_bits_count;
+	return counter_sync_bits_count;
 }

@@ -204,7 +204,8 @@ def compile_asm(s, *, back_end=MemonicBackEnd, generate_tree=False, directory=".
         hufftree = {}
         for l in lines:
             tokens = l.split(" ")
-            hufftree[tokens[0]] = tokens[3]
+
+            hufftree[tokens[0]] = tokens[3].strip('\n')
 
         f.close()
         par = parser.run()

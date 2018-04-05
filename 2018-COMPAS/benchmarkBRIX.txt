@@ -1,0 +1,11 @@
+On effectue un benchmark sur le jeu BRIX de la chip 8. Ce benchmark est orienté lecture/écriture en mémoire puisqu'il s'agit d'un programme intéragissant beaucoup avec l'écran.
+On effectue une première partie permettant de générer le codage de huffman optimal pour cette exécution puis on refait une partie de durée similaire mais avec le jeu d'instruction nouvellement généré. 
+Les données ne semblent montrer aucune réelle différence en terme répartition des bits échangés, en revanche de manière suprenante, le nombre de bits échangés augmente drastiquement.
+
+Première exécution: (ligne du tableau de stats)
+ Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
+ 63.4% & 10.8% & 10.2% & 7.6% & 8.0% \\ 
+ 
+ Seconde exécution: (avec l'encodage de huffman)
+  Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
+ 63.2% & 10.7% & 10.0% & 7.7% & 8.5% \\ 
