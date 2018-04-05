@@ -340,8 +340,22 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
   \label{tab:opcounts}
 \end{table}
 
-\texttt{binmult} est un programme qui réalise une multiplication d'entiers non signés 64 bits par additions et décalages. Le programme fait 104 bits dont 69 pour le coeur de boucle
+\texttt{binmult} est un programme qui réalise une multiplication de 17 par 42 par additions et décalages.
+Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 69 pour le coeur de boucle.
 
+
+\iffalse
+./emu/emu -i prog/mult.bin | ./huffmann.py > mult.huff
+
+# pour le .obj ou compter les bits
+./asm.py --loadhuffman mult.huff --stdout  prog/mult.s > mult.obj.huff
+# Puis éditer à la main pour compter les bits, argh.
+
+#pour le .bin
+./asm.py --loadhuffman mult.huff -o prog/mult.huff.bin prog/mult.s 
+./emu/emu -lh mult.huff -i prog/mult.huff.bin
+
+\fi
 
 \begin{table}
   \centering
@@ -354,13 +368,10 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
     benchmark    & instr & bits & bpi  & prog   & data R & data W & counters & branch & total \\
     \hline
     \hline
-    binmult,init & 10    & 136  & 13,6 & 89,4\% &        &        &          & 10,6\% & 415   \\
-    binmult, opt &       &      &      &                                                      \\
+    binmult,init & 10    & 125  & 12,5 & 89,4\% &        &        &          & 10,6\% & 415   \\
+    binmult, opt &       & 113  & 11.3 &        &        &        &          &                \\
         \hline
     \hline
-    binmult,init &       &      &      &                                                      \\
-    binmult, opt &       &      &      &                                                      \\
-        \hline
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
   \label{tab:bitcounts}
