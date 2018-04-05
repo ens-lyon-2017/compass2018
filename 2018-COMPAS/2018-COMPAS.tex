@@ -166,7 +166,7 @@ Ce mécanisme fonctionne de manière similaire en cas d'écriture.
 Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
 Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
 
-
+Un intérêt de cette interface est qu'elle ne dépend pas ni de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
 \begin{figure}[h]
     \begin{center}
   \begin{tikzpicture}
@@ -216,48 +216,55 @@ Il y a donc un potentiel de réaliser moins de transitions avec le système prop
 
 Pour cela nous nous efforçons principalement de minimiser la taille de l'encodage du jeu d'instructions.
 
-\subsection{Généralités sur les jeux d'instructions}
-Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
-\todo{blabla}
 \subsection{un c\oe ur  RISC}
 Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres 32 ou 64 bits.  
 Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
+Il est rediscuté en \ref{sec:amelioration}. 
 
+\subsection{Généralités sur les jeux d'instructions}
+Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
+\todo{blabla}
 
-\subsection{Format général des mnémoniques}
-Les instructions commencent toutes par un mnémonique, suivi des opérandes, le tout séparé par des espaces.
+\subsection{Format général des instructions}
+Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
+Les mnémoniques sont écrits exactement dans le même ordre (voir la figure~\ref{fig:exempleasm}).  
+Une fois que le processeur a reçu l'opcode, il sait combien d'opérande il doit recevoir et quel est leur type.
+
 
 Les instructions ALU viennent en version 2 et 3 opérandes, la destination venant toujours en premier.
 Par exemple, \\
- \begin{tabular}{lcl}
+  \begin{tabular}{lcl}
  \texttt{add2 r0 r1}&& réalise $r_0 \leftarrow r_0+r_1$. \\
  \texttt{add3 r0 r1 r2}&& réalise $r_0 \leftarrow r_1+r_2$.
- \end{tabular}
- 
-Le suffixe \texttt{i} signifie que le dernier opérande est une constante immédiate, par exemple:\\
- \begin{tabular}{lcl}
- \texttt{add2 r0 1}&& réalise $r_0 \leftarrow r_0+1$. \\
- \end{tabular}
+  \end{tabular}
+  Dans les programmes écrits à la main, il faut constater qu'on a utilisé surtout les versions à 2 opérandes.
+  Ceci est similaire à l'évolution du jeu d'instruction ARM vers le mode Thumb2 qui permet d'encoder sur 16 bits des instructions à deux opérandes. 
+  
+ L'opcode est différent pour les opérations dont les deux opérandes  sont des registres (par exemple \texttt{add2}), et les opérations portant sur un registre et une constante (par exemple \texttt{add2i}).
 
-L'assemblage commence à l'adresse 0, qui est celle à laquelle notre processeur démarre.
+Il y a des opcodes de différentes tailles (mais sans préfixe commun, le décodage n'est jamais ambigu)  et les opérandes peuvent également être de différentes tailles.
+En particulier, les constantes commencent par un préfixe qui décrit le nombre de bits sur lequel est encodé la constante: voir la table~\ref{tab:constantes} en annexe.
+Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bits, alors que les grandes constantes son également encodables.
+Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
 
- 
+On a un encodage différent pour les constantes pour différentes classes d'instructions (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
 
-Exemple de programme :
+\begin{figure}
+  \centering
 \begin{verbatim}
-  let r0 17     ; l'assembleur va calculer combien de bits il faut pour 17
-boucle:	
-  sub2i r0 1    ; encodé en 9 bits, et ceci est un commentaire
-  jumpif nz boucle  ; encodé en 16 bits, signifie  jump -25 
+  let r0 17         ; 0111 000 1000010001 ; 000 encode r0,  17 est encodé sur 10 bits
+boucle:	                                  ; ceci est une étiquette (label)
+  sub2i r0 1        ; 0011 000 01         ; 000 encode r0, 01 encode la constante 1
+  jumpif nz boucle  ; 1011 001 011100111  ; jumpif nz -25, encodé en 16 bits en tout 
 \end{verbatim}
-
-\subsection{Le jeu d'instructions et son encodage intial}
-
-
-La table \ref{tab:opcodes} en annexe décrit l'opcode qui commence chaque instruction.
+  \caption{Un exemple de programme assembleur, (une boucle vide) avec son encodage initial}
+  \label{fig:exempleasm}
+\end{figure}
 
 
+Les instructions de branchement sont relativement classiques.
 
+\iffalse
 \subsection{Les instructions de branchement }
 \label{sec:jumpcallret}
 
@@ -273,6 +280,8 @@ L'instruction \texttt{call} copie $\texttt{a}$ dans $r_{7}$, puis réalise $\mat
 (\emph{addr} est toujours signé).
 
 L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
+
+\fi
 
 \subsection{Les instructions d'accès mémoire}
 \label{sec:mem}
@@ -339,7 +348,7 @@ Bien sûr, cette seconde expérience reviendrait à construire un processeur opt
   \label{tab:bitcounts}
 \end{table}
 
-\section{Améliorations et pistes d'améliorations}
+\section{Améliorations et pistes d'améliorations \label{sec:amelioration}}
 
 Le coût intéressant de cette étude est le nombre de bits échangés sur les fils de données. On distinguera trois types de données échangées : 
 \begin{enumerate}
