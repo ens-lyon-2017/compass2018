@@ -33,6 +33,7 @@ typedef struct
 	uint debugger	:1;
 	uint graphical	:1;
 	uint stats	:1;
+	uint stats_tex	:1;
 	uint instr_counts	:1;
 	uint help	:1;
 	uint chip8	:1;
@@ -145,6 +146,8 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->graphical = 1;
 		else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
 			opt->stats = 1;
+        else if(!strcmp(arg, "-t") || !strcmp(arg, "--tex"))
+            opt->stats_tex = 1;
 		else if(!strcmp(arg, "-i") ||
 			!strcmp(arg, "--instruction-counts"))
 			opt->instr_counts = 1;
@@ -245,6 +248,7 @@ const char *help_string =
 "  -lh | --load-huffman <huffman file>\n"
 "                     Load the requested instruction set\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
+"  -t | --tex         Use in combination of -s to print a Tex array\n"
 "  -i                 Print the number of use of each instruction\n"
 "  --state            Print the state of the processor at the end of the\n"
 "                     execution.\n"
@@ -398,7 +402,7 @@ void chip8(const uint8_t *keyboard, void *arg)
 /*
 	print_stats() -- print statistics about memory/CPU exchanges
 */
-void print_stats(void)
+void print_stats(int latex)
 {
 	uint64_t instr_bits = cpu_instruction_bits_count();
 	uint64_t read_bits = cpu_read_bits_count();
@@ -427,6 +431,26 @@ void print_stats(void)
 	printf(" Jump             |   %12ld | %.1f%%\n", jump_bits,
 		(100.0 * jump_bits) / data_exchange);
 printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
+
+
+    /*
+        Asked by Florent
+        Print the stats in a Tex friendly way
+    */
+    if(latex)
+    {
+        printf("\n-----------------------------------------------\n");
+        printf("Exchanges between the Memory and the Processor:\n");
+        printf("-----------------------------------------------\n\n");
+        printf(" Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\\\ \n");
+        printf(" %.1f%% & %.1f%% & %.1f%% & %.1f%% & %.1f%% \\\\ \n",
+               (100.0 * instr_bits) / data_exchange,
+               (100.0 * read_bits) / data_exchange,
+               (100.0 * write_bits) / data_exchange,
+               (100.0 * ctr_access_bits) / data_exchange,
+               (100.0 * (call_return_bits+jump_bits)) / data_exchange
+        );
+    }
 }
 
 /*
@@ -584,7 +608,7 @@ int main(int argc, char **argv)
 		graphical_stop();
 	}
 
-	if(opt.stats) print_stats();
+	if(opt.stats) print_stats(opt.stats_tex);
 	if(opt.instr_counts) print_instr_counts();
 
 	return 0;
