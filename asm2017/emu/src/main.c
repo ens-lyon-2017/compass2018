@@ -245,6 +245,7 @@ const char *help_string =
 "  -lh | --load-huffman <huffman file>\n"
 "                     Load the requested instruction set\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
+"  -i                 Print the number of use of each instruction\n"
 "  --state            Print the state of the processor at the end of the\n"
 "                     execution.\n"
 ;
