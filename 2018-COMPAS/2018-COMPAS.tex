@@ -443,26 +443,24 @@ C'est un problème : comme on l'a vu l'efficacité du \texttt{push} détermine l
     \hline
   \end{tabular}
   \end{center}
-Après améliorations, on arrive à ce nouveau tableau :
+Tableau d'amélioration du nombre de bits de compteurs.
   \begin{center}
-    \begin{tabular}{|l|c|c|c|}
+    \begin{tabular}{|l|c|c|c|c|}
       \hline  
-      type  & instructions lues & données lues/écrites & compteurs \\
+      type  & sans dédoublement & initial & pré-décrément & syncr futée  \\
       \hline  
       \hline
-      \texttt{getctr} \ctr\ \reg\ & $2$ + $3$ & & \\
+      \texttt{getctr} & $64$ & 0 & & \\
       \hline
-      \texttt{setctr} \ctr\ \reg\ & $2$ + $3$ & & $\leqslant 64$ \\
+      \texttt{setctr} & 64 & & & $\leqslant 64$ \\
       \hline
-      \texttt{jump} & \addr\ & & $\leqslant 64$ \\
+      \texttt{jump(if)} & 64 & & & $\leqslant 64$\\
       \hline
-      \texttt{jumpif} \cond & $3$ + \addr\ & & $0$ ou $\leqslant 64$\\
+      \texttt{call} & 128 & 64 & & $\leqslant 64$\\
       \hline
-      \texttt{call} \addr & \addr\ & & $\leqslant 64$\\
+      \texttt{return} & 64 & & & $\leqslant64$\\
       \hline
-      \texttt{return} & & & $\leqslant64$\\
-      \hline
-      \texttt{push} \size\ \reg & $3$ & \size &\\
+      \texttt{push} & 196 & 128 & 0 & &
       \hline
     \end{tabular}
   \end{center}
