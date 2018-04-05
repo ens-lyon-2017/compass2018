@@ -1,0 +1,60 @@
+
+
+-----------------------------------------------
+Exchanges between the Memory and the Processor:
+-----------------------------------------------
+
+ Exchange Type    | Bits Exchanged | Proportion
+
+ Instruction Read |       32474350 | 63.4%
+ Memory Read      |        5526518 | 10.8%
+ Memory Write     |        5220136 | 10.2%
+ Get/Set Counters |        3883605 | 7.6%
+ Call/Return      |        2350450 | 4.6%
+ Jump             |        1732528 | 3.4%
+ Total            |       51187587 | 100.0%
+
+
+-----------------------------------------------
+Exchanges between the Memory and the Processor:
+-----------------------------------------------
+
+ Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
+ 63.4% & 10.8% & 10.2% & 7.6% & 8.0% \\ 
+0 add2 37696
+1 add2i 43596
+2 sub2 0
+3 sub2i 16412
+4 cmp 20059
+5 cmpi 201651
+6 let 107083
+7 leti 103836
+8 shift 53368
+9 readze 171915
+10 readse 0
+11 jump 21451
+12 jumpif 238210
+13 or2 5955
+14 or2i 0
+15 and2 0
+16 and2i 10298
+17 write 53271
+18 call 108628
+19 setctr 225920
+20 getctr 112355
+21 push 70157
+22 return 108627
+23 add3 29
+24 add3i 17686
+25 sub3 128
+26 sub3i 0
+27 and3 1048
+28 and3i 18938
+29 or3 0
+30 or3i 0
+31 xor3 14
+32 xor3i 5907
+33 asr3 0
+34 sleep 1557
+35 rand 5
+36 (res) 0
