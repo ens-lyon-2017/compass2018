@@ -305,7 +305,7 @@ boucle:	                                 ; ceci est une étiquette (label)
 
 \subsection{Transfert des bits à l'exécution}
 
-Les premières mesures faites sur ce processeur montraient qu'un bon tiers des bits échangés étaient dus à la synchronisation des compteurs entre la mémoire et le processeur. Typiquement, le \texttt{push} coûtait 128 bits à chaque utilisation, ce qui était coûteux par exemple dans la multiplication de matrices creuses. On a donc imaginé posséder un mode d'adressage avec pré-décrément, mais malgré cela, les coûts restaient très élevés. Le problème est qu'on envoie souvent des bits inutiles : lorsqu'on déplace un pointeur (par exemple le pc lors d'un saut), on le fait souvent à proximité de son ancienne valeur. Ainsi seuls les bits de poids faible changent entre l'ancienne et la nouvelle valeur. Or, on possède une copie des compteurs dans le processeur. On peut donc n'envoyer que ces bits de poids faible. Cette amélioration nous a permis de diviser par 10 la quantité de bits échangés pour synchroniser les compteurs, et ainsi rendre majoritaires les bits de code.
+Les premières mesures faites sur ce processeur montraient qu'un bon tiers des bits échangés étaient dus à la synchronisation des compteurs entre la mémoire et le processeur. Typiquement, le \texttt{push} coûtait 128 bits à chaque utilisation, ce qui était coûteux par exemple dans la multiplication de matrices creuses. On a donc imaginé posséder un mode d'adressage avec pré-décrément, mais malgré cela, les coûts restaient très élevés. Le problème est qu'on envoie souvent des bits inutiles : lorsqu'on déplace un pointeur (par exemple le pc lors d'un saut), on le fait souvent à proximité de son ancienne valeur. Ainsi seuls les bits de poids faible changent entre l'ancienne et la nouvelle valeur. Or, on possède une copie des compteurs dans le processeur. On peut donc n'envoyer que ces bits de poids faible. Cette amélioration nous a permis de diviser par 10 la quantité de bits échangés pour synchroniser les compteurs, et ainsi rendre majoritaires les bits de code. La table \ref{tab:costs} résume le coût des opérations en fonction des échanges
 
 %
 \iffalse
@@ -508,9 +508,14 @@ Il faudrait pour cela montrer que cette économie n'est pas anéantie par le sur
 
 
 \begin{table}[!h]
-  \caption{Coûts des opérations}
+  \caption{Coûts des opérations en bits de synchronisation des compteurs}
   \label{tab:costs}
+
+
+  
+  \iffalse
   On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits.
+  
   On distinguera trois types de bits échangées :
   \begin{enumerate}
   \item les instructions du programme (code lu par le processeur).
@@ -548,33 +553,35 @@ La taille de l'opcode d'une instruction étant variable, il faut à chaque fois 
     \hline
   \end{tabular}
   \end{center}
-Tableau d'amélioration du nombre de bits de compteurs.
+
+  \fi
+Ce tableau résume le nombre de bits échangés pour synchroniser les compteurs entre la mémoire et le processeur par opération, en fonction de la manière dont sont synchronisés les compteurs. La première ligne représente une version où les compteurs ne sont pas dédoublés dans le processeur.
   \begin{center}
     \begin{tabular}{|l|c|c|c|c|}
       \hline  
-      type   & sans dédoublement  & initial         & pré-décrément & syncr futée    \\
+      type   & sans dédoublement  & initial         & pré-décrément & bits de poids faible   \\
       \hline  
       \hline
-      \texttt{getctr}     & 64  & 0   &   &   \\
+      \texttt{getctr}     & 64  & 0 & 0 & 0   \\
       \hline
-      \texttt{setctr}     & 64  &     &   & $\leqslant 64$ \\
+      \texttt{setctr}     & 64  & 64  & 64   & $\leqslant 64$ \\
       \hline
-      \texttt{jump(if)}   & 64  &     &   & $\leqslant 64$ \\
+      \texttt{jump(if)}   & 64  & 64 & 64 & $\leqslant 64$ \\
       \hline
-      \texttt{call}       & 128 & 64  &   & $\leqslant 64$ \\
+      \texttt{call}       & 128 & 64  & 64 & $\leqslant 64$ \\
       \hline
-      \texttt{return}     & 64  &     &   & $\leqslant64$  \\
+      \texttt{return}     & 64  & 64 & 64 & $\leqslant64$  \\
       \hline
-      \texttt{push}       & 196 & 128 & 0 &  \\
+      \texttt{push}       & 196 & 128 & 0 & 0  \\
       \hline
     \end{tabular}
   \end{center}
-  Résultat des améliorations sur les benchmarks
+  Le résultat de ces améliorations est visible sur les benchmarks :
   \begin{center}
     \begin{tabular}{|l|c|c|c|c|}
       
       \hline  
-      benchmark   & sans dédoubl.  & avec dédoubl.  & pré-décrément & syncro. futée    \\
+      benchmark   & sans dédoubl.  & avec dédoubl.  & pré-décr. & poids faible   \\
       \hline  
       \hline
       binmult & 512 & 100\% & 100\% & 8.59 \% \\
