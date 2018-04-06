@@ -166,7 +166,7 @@ Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compt
 Si le compteur était le PC, on a réalisé un saut.
 
 Cette interface ne dépend pas de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
-\begin{figure}[h]
+\begin{figure}[b]
     \begin{center}
   \begin{tikzpicture}
     \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {~~~Processor} ;
@@ -200,7 +200,8 @@ Cette interface ne dépend pas de la taille mémoire, ni de la puissance du proc
   \label{fig:overview}
 \end{figure}
 
-\subsection{Comparaison avec une architecture classique}
+\iffalse
+% \subsection{Comparaison avec une architecture classique}
 Si l'on compare la figure~\ref{fig:overview} avec la figure~\ref{fig:mvn} lors de l'exécution d'un programme classique, il est clair que notre proposition dégrade le temps d'exécution, puisque la transmission de la moindre instruction et de la moindre donnée demande plusieurs cycles d'horloge.
 
 Si par contre on s'intéresse au nombre de transitions sur les fils (une métrique raisonnable pour mesurer la consommation dynamique), on peut faire les observations suivantes.
@@ -211,13 +212,13 @@ Si par contre on s'intéresse au nombre de transitions sur les fils (une métriq
 \item Adresses comme données peuvent être transmises au bit près.
 \item Par contre on a une transition d'horloge par bit transmis, au lieu d'une transition d'horloge pour $w_a$ ou $w_d$ bits.
 \end{itemize}
-Il y a donc un potentiel de réaliser moins de transitions avec le système proposé, potentiel que le présent article se propose de mesurer.
+\fi
+Cette interface n'est certainement pas réaliste, en tout cas pas avec une horloge à haute fréquence dans une technologie moderne.
+Il y a une hypothèse de synchronicité des signaux de contrôle et de donnée qu'on ne trouve pas dans les liens série rapide ou les bus d'interface mémoire). Nous l'utilisons essentiellement comme une règle du jeu pour étudier la question de la taille de l'encodage d'un jeu d'instructions.
 
-Pour cela nous nous efforçons principalement de minimiser la taille de l'encodage du jeu d'instructions.
-
-\subsection{un c\oe ur  RISC}
+%\subsection{un c\oe ur  RISC}
 Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres 32 ou 64 bits.  
-Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique: encoder le numéro de registre sur aussi peu de bits que possible. Cependant, notons que dédoubler le nombre de registres ajouterait 1 voire 2 bits à la majorité des opérations.
+Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique: encoder le numéro de registre sur aussi peu de bits que possible. Passer le nombre de registres de 8 à 16 ajouterait 1, 2 ou 3 bits à l'encodage de la plupart des opérations.
 
 
 \section{Présentation du jeu d'instruction initial}
@@ -227,7 +228,7 @@ Les choix faits ne sont pas toujours ceux qui étaient considérés comme les me
 % Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
 % \todo{blabla}
 
-\subsection{Format général des instructions}
+%\subsection{Format général des instructions}
 Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
 Les mnémoniques sont écrits exactement dans le même ordre (voir la figure~\ref{fig:exempleasm} pour un exemple).  
 Une fois que le processeur a reçu l'opcode, il sait combien d'opérande il doit recevoir et quel est leur type.
@@ -253,10 +254,9 @@ Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 12
 On a un encodage des constantes différent pour chaque classe d'instruction (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
 
 
-\begin{table}
-  \label{tab:constantes}
+\begin{table}[b]
   \centering
-  \caption{Encodage \emph{prefix-free} des différentes constantes}
+  \caption{Encodage \emph{prefix-free} des différentes constantes  \label{tab:constantes}}
   \begin{tabular}{|l||l||l|}
     \hline
     adresses et déplacements & constantes ALU & constantes de shift                   \\
@@ -349,8 +349,8 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 \fi
 
 \section{Premières expériences}
-Ces expériences portent sur une petite suite de benchmarks, écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture.
-Quelques résultats sont rapportés dans la table~\ref{tab:bitcounts}.
+Nous n'avons pas encore de compilateur pour cette architecture.
+Les expériences, dont quelques résultats sont rapportés dans la table~\ref{tab:bitcounts}, portent sur une petite suite de benchmarks écrits en assembleur à la main:
 
 \textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, pour faire manipuler l'arithmétique de bas niveau.
 les étudiants ont donc dû écrire le programme de la figure~\ref{fig:exempleasm}, et même l'assembler à la main dans un premier temps.
