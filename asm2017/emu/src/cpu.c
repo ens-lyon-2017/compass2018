@@ -65,8 +65,11 @@ static size_t counts[DISASM_INS_COUNT] = { 0 };
 */
 static uint instruction_bits_count = 0;
 
-/* Number of bits exchanged via read/write instructions. */
-static uint read_write_bits_count = 0;
+/* Number of bits exchanged via read instructions. */
+static uint read_bits_count = 0;
+
+/* Number of bits exchanged via write instructions. */
+static uint write_bits_count = 0;
 
 /* Number of bits sent to the memory when calling jump/jumpif/call/return */
 static uint jump_bits_count = 0;
@@ -248,7 +251,7 @@ static void readze(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	read_write_bits_count += size;
+	read_bits_count += size;
 }
 
 static void readse(cpu_t *cpu)
@@ -260,7 +263,7 @@ static void readse(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	read_write_bits_count += size;
+	read_bits_count += size;
 }
 
 static void jump(cpu_t *cpu)
@@ -336,7 +339,7 @@ static void _write(cpu_t *cpu)
 
 	/* Balance the automatic instruction bit count of cpu_execute() */
 	if(ptr == PC) instruction_bits_count -= size;
-	read_write_bits_count += size;
+	write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -345,6 +348,8 @@ static void _write(cpu_t *cpu)
 static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
+	if (counting_method == 1)
+		ctr_access_bits_count += 64;
 	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->r[7] = cpu->ptr[PC];
 
@@ -396,7 +401,7 @@ static void push(cpu_t *cpu)
 		// Sending 64 bits to the memory to set the new PC value.
 		ctr_access_bits_count += 64;
 
-	read_write_bits_count += size;
+	write_bits_count += size;
 
 	/* Let the debugger know about this memory change */
 	cpu->m = 1;
@@ -597,9 +602,14 @@ uint cpu_instruction_bits_count(void)
 	return instruction_bits_count;
 }
 
-uint cpu_read_write_bits_count(void)
+uint cpu_read_bits_count(void)
 {
-	return read_write_bits_count;
+	return read_bits_count;
+}
+
+uint cpu_write_bits_count(void)
+{
+	return write_bits_count;
 }
 
 uint cpu_jump_bits_count(void)
