@@ -345,6 +345,8 @@ static void _write(cpu_t *cpu)
 static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
+	if (counting_method == 1)
+		ctr_access_bits_count += 64;
 	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->r[7] = cpu->ptr[PC];
 
