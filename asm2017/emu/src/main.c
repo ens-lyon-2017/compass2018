@@ -433,11 +433,13 @@ void print_stats(int latex)
         printf("\n-----------------------------------------------\n");
         printf("Exchanges between the Memory and the Processor:\n");
         printf("-----------------------------------------------\n\n");
-        printf(" Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\\\ \n");
-        printf(" %.1f%% & %.1f%% & %.1f%% \\\\ \n",
+        printf(" Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump & Total "
+                       "of exchanged bits \\\\ \n");
+        printf(" %.1f \\%% & %.1f \\%% & %.1f \\%%  & %.3e\\\\ \n",
                (100.0 * instr_bits) / data_exchange,
                (100.0 * read_write_bits) / data_exchange,
-               (100.0 * counter_sync_bits) / data_exchange);
+               (100.0 * counter_sync_bits) / data_exchange,
+               (double) data_exchange);
     }
 }
 
