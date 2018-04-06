@@ -2,14 +2,13 @@
 ;                       Multiplication de matrices                             ;
 ;------------------------------------------------------------------------------;
 
-	call get_m1_ptr
-	let r0 r6
-	;; call get_m2_ptr
-	let r1 r6
+	leti r0 0x10000		;ici sont les  matrices à multiplier
+	leti r1 0x10000
+	
 	leti r3 4
 	leti r4 4
 	leti r5 4
-	leti r6 0x10000	;on trouvera la multiplication ici
+	leti r6 0x10400	;ici est stocké le résultat
 	call multmatrix
 
 	leti r0 3
@@ -198,5 +197,3 @@ multlibsk:
 	;;           ):::::(
 	;;           `.:::.'
 	;;             """
-
-	.include testmatrices.s

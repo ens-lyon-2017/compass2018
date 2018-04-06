@@ -67,8 +67,12 @@ static uint instruction_bits_count = 0;
 
 /* Number of bits exchanged via read/write instructions. */
 static uint read_write_bits_count = 0;
-/* Number of bits sent to the memroy to synchronize counters. */
-static uint counter_sync_bits_count = 0;
+
+/* Number of bits sent to the memory when calling jump/jumpif/call/return */
+static uint jump_bits_count = 0;
+
+/* Number of bits sent the the memory when calling `setctr` */
+static uint setctr_bits_count = 0;
 
 /*
 	set_flags()
@@ -259,7 +263,7 @@ static void jump(cpu_t *cpu)
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
 
-	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
@@ -280,7 +284,7 @@ static void jumpif(cpu_t *cpu)
 	   performed by cpu_execute() */
 	instruction_bits_count -= diff;
 
-	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->ptr[PC] + diff);
 	cpu->ptr[PC] += diff;
 	/* Detect "halt" loops */
 	if(cpu->ptr[PC] == cpu->IPC) cpu->h = 1;
@@ -333,7 +337,7 @@ static void _write(cpu_t *cpu)
 static void call(cpu_t *cpu)
 {
 	int64_t target = get(addr, NULL);
-	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->r[7] = cpu->ptr[PC];
 
 	/* This is a jump, so we also need to correct the statistics */
@@ -348,7 +352,7 @@ static void setctr(cpu_t *cpu)
 	if(ptr == PC) instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
 
 	/* Changes to the counters must be passed on to the memory */
-	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
+	setctr_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
 
 	cpu->ptr[ptr] = cpu->r[rs];
 
@@ -384,7 +388,7 @@ static void _return(cpu_t *cpu)
 	/* Cancel out the yet-to-happen automatic increase */
 	instruction_bits_count -= cpu->r[7] - cpu->ptr[PC];
 
-	counter_sync_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
+	jump_bits_count += sent_ctr_bits(cpu->ptr[PC], cpu->r[7]);
 	cpu->ptr[PC] = cpu->r[7];
 
 	/* The 64 bits from r7 indicating the value of the new PC are sent */
@@ -579,7 +583,12 @@ uint cpu_read_write_bits_count(void)
 	return read_write_bits_count;
 }
 
-uint cpu_counter_sync_bits_count(void)
+uint cpu_jump_bits_count(void)
 {
-	return counter_sync_bits_count;
+	return jump_bits_count;
+}
+
+uint cpu_setctr_bits_count(void)
+{
+	return setctr_bits_count;
 }

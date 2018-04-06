@@ -345,18 +345,11 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
 
 
 \iffalse
+./asm.py -v -b prog/mult.s
+./emu/emu -s -t prog/mult.bin
 ./emu/emu -i prog/mult.bin | ./huffmann.py > mult.huff
-
-# pour le .obj ou compter les bits
-./asm.py --loadhuffman mult.huff --stdout  prog/mult.s > mult.obj.huff
-# Puis éditer à la main pour compter les bits, argh.
-
-#pour le .bin
-./asm.py  prog/mult.s -b --loadhuffman mult.huff -o prog/mult.huff.bin 
-./emu/emu -s -lh mult.huff -i prog/mult.huff.bin
-
-# Et maintenant la comparaison 
-./emu/emu -s  -i prog/mult.bin
+./asm.py --loadhuffman mult.huff -v -b prog/mult.s -o  prog/mult.huff.bin
+./emu/emu -s -t -lh mult.huff -i prog/mult.huff.bin
 
 \fi
 
@@ -368,14 +361,14 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
     \hline
 
     
-    benchmark    & instr & bits & bpi  & prog   & data R & data W & counters & branch & total \\
+    benchmark    & instr & bits & bpi  & prog    & data R & data W & counters & branch  & total \\
     \hline
     \hline
-    binmult,init & 10    & 125  & 12,5 & 89,4\% &        &        &          & 10,6\% & 415   \\
-    binmult, opt &       & 113  & 11.3 &        &        &        &          &        & 445   \\
+    binmult,init & 10    & 125  & 12,5 & 89,4\%  & 0.0 \% & 0.0 \% & 0.0 \%   & 10,6\%  & 415   \\
+    binmult, opt &       & 113  & 11.3 & 85.5 \% & 0.0 \% & 0.0 \% & 0.0 \%   & 14.5 \% & 373   \\
         \hline
-    Chip8        &       &      &      & 63.4\% & 10.8\% & 10.2\% & 7.6\%    & 8.0\%  & 51M   \\
-    Chip8 opt    &       &      &      & 63.2\% & 10.7\% & 10.0\% & 7.7\%    & 8.5\%  & 72M   \\ 
+    Chip8        &       &      &      & 63.4\%  & 10.8\% & 10.2\% & 7.6\%    & 8.0\%   &       \\
+    Chip8 opt    &       &      &      & 63.2\%  & 10.7\% & 10.0\% & 7.7\%    & 8.5\%   &       \\ 
     \hline
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
