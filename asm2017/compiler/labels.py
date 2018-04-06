@@ -154,16 +154,25 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
 
             # x.funcname is "jumpl" or "jumpifl" or "call"
             elif type(x) is Line:
-                bitcode = " " + self.huffman_tree[x.funcname[:-1]]
+                bitcode = self.huffman_tree[x.funcname[:-1]]
+                space = "" if 'b' in self.write_mode else " "
 
-                endcode.append(bitcode)
                 if x.funcname is "jumpifl":
                     cond = x.typed_args[0].raw_value
-                    endcode.append(" " + self.bin_condition(cond))
+                    bitcode += space + self.bin_condition(cond)
                 k, n = addr_values[i]
-                endcode.append(" " + self.bit_prefix[k] + self.binary_repr(n, k,signed=True))
+                bitcode += space + self.bit_prefix[k] + self.binary_repr(n, k,signed=True)
 
+                endcode.append(bitcode)
                 self.instructions_written += 1
+
+        # Remove empty elements from endcode
+        endcode = [ s for s in endcode if s ]
+
+        # Remove newlines at the end of strings in endcode
+        for i in range(len(endcode)):
+            if endcode[i][-1] == '\n':
+                endcode[i] = endcode[i][:-1]
 
         # print(endcode)
 
