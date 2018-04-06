@@ -259,17 +259,44 @@ Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 12
 
 On a un encodage différent pour les constantes pour différentes classes d'instructions (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
 
+
+
+
+
+
+
+
+
+
+
 \begin{figure}
-  \centering
-\begin{verbatim}
-  let r0 17        ; 0111 000 1000010001 ; 000 encode r0,  17 est encodé sur 10 bits
-boucle:	           ; ceci est une étiquette (label)
-  sub2i r0 1       ; 0011 000 01         ; 000 encode r0, 01 encode la constante 1
-  jumpif nz boucle ; 1011 001 011100111  
-;;jumpif nz -25, encodé en 16 bits en tout 
-\end{verbatim}
-  \caption{Un exemple de programme assembleur, (une boucle vide) avec son encodage initial}
+  \centering {\small \tt
+  \begin{tabular}{llll}
+    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage initial} & \textrm{encodage Huffman} \\
+    \hline
+    
+         & leti	r0 17        & 0111 000 1000010001 & 100 000 1000010001 \\
+         & leti	r1 42        & 0111 001 1000101010 & 100 001 1000101010 \\
+         &                   &                     &                    \\
+				 & leti	r2 0				 & 0111 010 00				 & 100 010 00       	\\
+nonzero: & shift	right r0 1 & 1000 1 000 1				 & 00 1 000 1       	\\
+				 & jumpif	nc next		 & 1011 101 000001010	 & 01 101 000001010 	\\
+				 & add2	r2 r1				 & 0000 010 001				 & 1010 010 001     	\\
+next:		 & shift	left r1 1	 & 1000 0 001 1				 & 00 0 001 1       	\\
+				 & cmpi	r0 0				 & 0101 000 00				 & 11 000 00        	\\
+				 & jumpif	nz nonzero & 1011 001 010111011	 & 01 001 011000101 	\\
+         &                   &                                          \\
+loop:    & jump	loop         & 1010 011110011      & 10110 011110010    \\
+  \end{tabular}
+}
+  \caption{Un exemple de programme assembleur (une multiplication entière)}
   \label{fig:exempleasm}
+\iffalse
+  let r0 17        ; 0111 000 1000010001 ; 000 encode r0,  17 est encodé sur 10 bits
+boucle:	                                 ; ceci est une étiquette (label)
+  sub2i r0 1       ; 0011 000 01         ; 000 encode r0, 01 encode la constante 1
+  jumpif nz boucle ; 1011 001 011100111  ;jumpif nz -25, encodé en 16 bits en tout 
+\fi
 \end{figure}
 
 
@@ -316,7 +343,19 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 
 
 \section{Expériences}
-Pour une petite suite de benchmarks (écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture), nous avons réalisé les mesures suivantes.
+Ces expériences portent sur une petite suite de benchmarks, écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture.
+
+\textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, il fait manipuler l'arithmétique de bas niveau.
+les étudiants ont du écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même.
+
+\textbf{Produit de matrice}
+Le produit de matrice utilise la multiplication précédente, mais les matrices sont lues et écrites en mémoire.
+
+\textbf{Produit de matrice}
+Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
+Ce benchmark fait tourner le jeu BRIX pendant 50000 instructions.
+Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
+
 
 \subsection{Codage de Huffman}
 La première expérience consiste à utiliser l'encodage initial.
@@ -352,6 +391,16 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
 ./emu/emu -s -t -lh mult.huff -i prog/mult.huff.bin
 
 \fi
+
+
+
+
+
+
+
+
+
+
 
 \begin{table}
   \centering
