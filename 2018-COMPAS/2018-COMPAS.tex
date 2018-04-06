@@ -432,11 +432,15 @@ python3 ./matmulstat/makematrix.py
     Chip8 opt    &       &      &      & 63.2\%  & 10.7\% & 10.0\% & 7.7\%    & 8.5\%   &       \\ 
     \hline
   \end{tabular}
-  \caption{Nombre de bits échangés par benchmark}
+  \caption{Nombre de bits échangés par benchmark. La colonne à partir de \texttt{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
   \label{tab:bitcounts}
 \end{table}
 
 
+%Nous concluons en definissant quelques pistes d'amélioration.
+
+
+\iffalse
 \subsection{Modes d'adressage mémoire}
 \subsubsection{Choix initiaux}
 On a fait le choix de ne pas faire d'adressage par registre : en effet, cela aurait coûté 64 bits d'adresse par adressage. Les compteurs permettent de faire autant avec seulement 2 bits à chaque adresse. En contrepartie, l'arithmétique sur les pointeurs devient extrêmement coûteuse : charger une adresse dans un registre ; faire une opération arithmétique ; affecter l'adresse avec le registre. Cependant, on espère que la plupart du temps, les données sont lues de manière séquencielle, et que donc un adressage avec post-incrément suffit à limiter l'arithmétique des pointeurs. Cette affirmation est relativisée en \ref{addr:amel}  
@@ -465,14 +469,25 @@ On pourrait aussi avoir un nombre de registres beaucoup plus grand avec un encod
 
 L'ISA présentée ici est assez limitée. Elle nous pousse donc à diviser une opération en plusieurs instructions, ce qui rallonge le code et donc le nombre de bits d'instructions échangés. Voici quelques propositions d'améliorations.\par
 La principale arithmétique des compteurs est un incrément. Ainsi, en rajoutant des instructions d'incrément de compteurs, on pourrait factoriser \texttt{getctr ctr ri; add2 ri rj; setctr ctr ri} en \texttt{incrctr ctr ri}, gagnant en taille de code, mais aussi l'usage d'un registre. Pour compiler C, on aura aussi besoin d'un accès à la pile indexé par une constante. Enfin, dans une boucle, les \texttt{jump(if)} effectuent des sauts toujours au même endroit. Il serait peut-être intéressant d'avoir des registres \og{} de saut \ \fg{} permettant de stocker l'adresse de saut une fois plutôt que de lire systématiquement une constante à chaque tour de boucle.  
-
-\section{Conclusion et perspectives}
+\fi
+\section{Conclusion et perspectives d'améliorations}
 
 - une étude de l'encodage d'un jeu d'instruction universel si l'on enlève la contrainte de la taille des codes
 
+- le code c'est l'essentiel des transitions (modérer en parlant des caches)
+
+- limitations de l'ISA
+
+- optimiser les accès mémoire
+
+- autocritique des benchmarks choisis
+
+
 - quel réalisme et quelles applications
 
-- un processeur dont l'encodage est reconfigurable? 
+- un processeur dont l'encodage est reconfigurable?
+
+
 \bibliography{biblio.bib}
 
 
