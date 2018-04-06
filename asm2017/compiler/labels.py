@@ -43,7 +43,6 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
                 acc = ""
 
         fullcode.append((len(acc), acc))
-
         return fullcode
 
     def get_label_pos(self, fullcode):
@@ -164,7 +163,13 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
                 k, n = addr_values[i]
                 endcode.append(" " + self.bit_prefix[k] + self.binary_repr(n, k,signed=True))
 
+                self.instructions_written += 1
+
         # print(endcode)
+
+        self.bits_written = 0
+        for el in endcode:
+            self.bits_written += el.count('0') + el.count('1')
 
         return endcode
 
