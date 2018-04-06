@@ -282,17 +282,6 @@ On a un encodage différent pour les constantes pour différentes classes d'inst
   \end{tabular}
 \end{table}
 
-
-
-
-
-
-
-
-
-
-
-
 \begin{figure}
   \centering {\small \tt
   \begin{tabular}{llll}
@@ -408,6 +397,9 @@ python3 ./matmulstat/makematrix.py
 ./emu/emu -i prog/matmul.bin --load 65536:mat32x32.bytes | ./huffmann.py > matmul.huff
 ./asm.py --loadhuffman matmul.huff -v -b prog/matmul.s -o prog/matmul.huff.bin
 ./emu/emu -s -t -lh matmul.huff prog/matmul.huff.bin --load 65536:mat32x32.bytes
+
+idem mais avec python3 ./matmulstat/makematrix.py 0.1 pour une matrice creuse
+
 \fi
 
 
@@ -425,8 +417,11 @@ python3 ./matmulstat/makematrix.py
     binmult,init & 10    & 125  & 12.5 & 89.4\%  & 0.0 \% & 0.0 \% & 0.0 \%   & 10,6\%  & 415   \\
     binmult, opt &       & 113  & 11.3 & 85.5 \% & 0.0 \% & 0.0 \% & 0.0 \%   & 14.5 \% & 373   \\
     \hline
-    matmul,init & 112 & 1632 & 14.6 &  \\ 
-    matmul,opt & 112 & 1817 & 16.2 & \\
+    matmul,init & 112 & 1632 & 14.6  \\ 
+    matmul,opt & 112 & 1817 & 16.2 \\
+    \hline
+    matmul*,init & 112 & 1632 & 14.6 \\
+    matmul*,opt & & & \\
     \hline
     Chip8        &       &      &      & 63.4\%  & 10.8\% & 10.2\% & 7.6\%    & 8.0\%   &       \\
     Chip8 opt    &       &      &      & 63.2\%  & 10.7\% & 10.0\% & 7.7\%    & 8.5\%   &       \\ 
@@ -434,6 +429,7 @@ python3 ./matmulstat/makematrix.py
   \end{tabular}
   \caption{Nombre de bits échangés par benchmark}
   \label{tab:bitcounts}
+  La deuxième multiplication matricielle a été faite sur matrice creuse (en moyenne 90\% de 0).
 \end{table}
 
 
@@ -546,9 +542,11 @@ Tableau d'amélioration du nombre de bits de compteurs.
       benchmark   & sans dédoubl.  & avec dédoubl.  & pré-décrément & syncro. futée    \\
       \hline  
       \hline
-      binmult & & & &\\
+      binmult & 512 & 512 & 512 & 44 \\
       \hline
-      matmult & & & & \\
+      matmul & 212018368 & 97.93\% & 95.85\% & 9.75\% \\
+      \hline
+      matmul* & 35318976 & 87.55\% & 75.09\% & 8.93\% \\
       \hline
       chip8 & & & &\\
       \hline
@@ -557,6 +555,30 @@ Tableau d'amélioration du nombre de bits de compteurs.
 
 \end{table}
 
+\iffalse
+
+Benchmark pour échanges
+(pour binmult matmul)
+make
+for i in `seq 1 4`
+do
+./emu/emu --basic prog/binmult.bin -cm $i
+done | ./matmulstats/percents.py
+
+for i in `seq 1 4`
+do
+./emu/emu --basic prog/matmul.bin -cm $i --load 65536:mat32x32.bytes
+done | ./matmulstats/percents.py
+
+python3 ./matmulstats/makematrix.py 0.1
+for i in `seq 1 4`
+do
+./emu/emu --basic prog/matmul.bin -cm $i --load 65536:mat32x32.bytes
+done | ./matmulstats/percents.py
+
+Chip8 c'est du chrono
+$
+\fi
 
 \appendix
 \begin{table}[!h]
