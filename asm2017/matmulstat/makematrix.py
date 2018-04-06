@@ -1,6 +1,12 @@
 #! /usr/bin/env python3
 
-m1 = [[i+4*j+1 for i in range(4)] for j in range(4)]
+from random import randrange,random
+
+
+density = 1
+
+m1 = [[randrange(1<<64)*((random()<density)) for i in range(32)]
+       for j in range(32)]
 m2 = [[13+i+2*j for i in range(2)] for j in range(4)]
 
 def matrixconst(M,arch):
@@ -12,7 +18,7 @@ def matrixconst(M,arch):
     return result
 
 
-f = open("mat4x4.bytes","wb")
+f = open("mat32x32.bytes","wb")
 f.write(matrixconst(m1,64))
 f.close()
 

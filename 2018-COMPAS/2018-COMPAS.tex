@@ -351,7 +351,7 @@ les étudiants ont du écrire le programme de la figure 3, et même l'assembler 
 \textbf{Produit de matrice}
 Le produit de matrice utilise la multiplication précédente, mais les matrices sont lues et écrites en mémoire.
 
-\textbf{Produit de matrice}
+\textbf{Chip8}
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
 Ce benchmark fait tourner le jeu BRIX pendant 50000 instructions.
 Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
@@ -390,16 +390,13 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
 ./asm.py --loadhuffman mult.huff -v -b prog/mult.s -o  prog/mult.huff.bin
 ./emu/emu -s -t -lh mult.huff -i prog/mult.huff.bin
 
+python3 ./matmulstat/makematrix.py
+./asm.py -v -b prog/matmul.s
+./emu/emu -s -t prog/matmul.bin --load 65536:mat32x32.bytes
+./emu/emu -i prog/matmul.bin --load 65536:mat32x32.bytes | ./huffmann.py > matmul.huff
+./asm.py --loadhuffman matmul.huff -v -b prog/matmul.s -o prog/matmul.huff.bin
+./emu/emu -s -t -lh matmul.huff prog/matmul.huff.bin --load 65536:mat32x32.bytes
 \fi
-
-
-
-
-
-
-
-
-
 
 
 \begin{table}
@@ -413,9 +410,12 @@ Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 6
     benchmark    & instr & bits & bpi  & prog    & data R & data W & counters & branch  & total \\
     \hline
     \hline
-    binmult,init & 10    & 125  & 12,5 & 89,4\%  & 0.0 \% & 0.0 \% & 0.0 \%   & 10,6\%  & 415   \\
+    binmult,init & 10    & 125  & 12.5 & 89.4\%  & 0.0 \% & 0.0 \% & 0.0 \%   & 10,6\%  & 415   \\
     binmult, opt &       & 113  & 11.3 & 85.5 \% & 0.0 \% & 0.0 \% & 0.0 \%   & 14.5 \% & 373   \\
-        \hline
+    \hline
+    matmul,init & 112 & 1632 & 14.6 &  \\ 
+    matmul,opt & 112 & 1817 & 16.2 & \\
+    \hline
     Chip8        &       &      &      & 63.4\%  & 10.8\% & 10.2\% & 7.6\%    & 8.0\%   &       \\
     Chip8 opt    &       &      &      & 63.2\%  & 10.7\% & 10.0\% & 7.7\%    & 8.5\%   &       \\ 
     \hline

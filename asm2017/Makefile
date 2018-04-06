@@ -8,3 +8,4 @@ all:
 clean:
 	(cd prog; make clean)
 	(cd emu; make distclean)
+	$(RM) *.bytes *.huff

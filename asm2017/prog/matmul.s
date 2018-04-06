@@ -3,17 +3,19 @@
 ;------------------------------------------------------------------------------;
 
 	leti r0 0x10000		;ici sont les  matrices à multiplier
-	leti r1 0x10000
+	leti r1 0x10000		;on élève donc au carré la matrice en 0x10000
 	
-	leti r3 4
-	leti r4 4
-	leti r5 4
-	leti r6 0x10400	;ici est stocké le résultat
+	leti r3 32
+	leti r4 32
+	leti r5 32
+	leti r6 0x20000	;ici est stocké le résultat
 	call multmatrix
 
-	leti r0 3
-	leti r1 2
-	leti r2 0x10000
+	jump end
+	
+	leti r0 32
+	leti r1 32
+	leti r2 0x20000
 	call blitmatrix
 
 end:
