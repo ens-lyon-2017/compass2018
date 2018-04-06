@@ -101,11 +101,18 @@ size_t *cpu_counts(void);
 uint cpu_instruction_bits_count(void);
 
 /*
-	cpu_read_write_bits_count() -- statistics about the number of bits
-	exchanged between the processor and the memory when reading/writing the
+	cpu_read_bits_count() -- statistics about the number of bits
+	exchanged between the processor and the memory when reading the
 	memory.
 */
-uint cpu_read_write_bits_count(void);
+uint cpu_read_bits_count(void);
+
+/*
+	cpu_write_bits_count() -- statistics about the number of bits
+	exchanged between the processor and the memory when writing the
+	memory.
+*/
+uint cpu_write_bits_count(void);
 
 /*
 	cpu_setctr_count() -- statistics about the number of bit

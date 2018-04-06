@@ -425,11 +425,12 @@ void chip8(const uint8_t *keyboard, void *arg)
 void print_stats(int latex)
 {
 	uint64_t instr_bits = cpu_instruction_bits_count();
-	uint64_t read_write_bits = cpu_read_write_bits_count();
+	uint64_t read_bits = cpu_read_bits_count();
+	uint64_t write_bits = cpu_write_bits_count();
 	uint64_t jump_bits = cpu_jump_bits_count();
 	uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
 
-	uint64_t data_exchange = instr_bits + read_write_bits + \
+	uint64_t data_exchange = instr_bits + read_bits + write_bits + \
 				 jump_bits + ctr_access_bits;
 
 	printf("\n-----------------------------------------------\n");
@@ -438,8 +439,10 @@ void print_stats(int latex)
 	printf(" Exchange Type    | Bits Exchanged | Proportion\n\n");
 	printf(" Instruction Read |   %12ld | %.1f%%\n", instr_bits,
 		(100.0 * instr_bits) / data_exchange);
-	printf(" Read/Write       |   %12ld | %.1f%%\n", read_write_bits,
-		(100.0 * read_write_bits) / data_exchange);
+	printf(" Memory Read      |   %12ld | %.1f%%\n", read_bits,
+		(100.0 * read_bits) / data_exchange);
+	printf(" Memory Write     |   %12ld | %.1f%%\n", write_bits,
+		(100.0 * write_bits) / data_exchange);
 	printf(" Jump/Call/Return |   %12ld | %.1f%%\n", jump_bits,
 		(100.0 * jump_bits) / data_exchange);
 	printf(" Get/Set Counter  |   %12ld | %.1f%%\n", ctr_access_bits,
@@ -457,12 +460,13 @@ void print_stats(int latex)
         printf("Exchanges between the Memory and the Processor:\n");
         printf("-----------------------------------------------\n\n");
 
-        printf(" Instruction Read & Memory Read/Write & Get/Set Counters & Call/Return/Jump & Total "
+        printf(" Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump & Total "
 
                        "of exchanged bits \\\\ \n");
-        printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
+        printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
                (100.0 * instr_bits) / data_exchange,
-               (100.0 * read_write_bits) / data_exchange,
+               (100.0 * read_bits) / data_exchange,
+               (100.0 * write_bits) / data_exchange,
 	       (100.0 * ctr_access_bits) / data_exchange,
                (100.0 * jump_bits) / data_exchange,
                (double) data_exchange);
