@@ -41,11 +41,11 @@
 \sloppy
 
 \begin{abstract}
-Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresse et d'un bus de données de grandes tailles (entre 8 et 64 bits).
-Cette granularité contraint l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction.
-Or les échanges de données représentent le gros de l'énergie dépensée.
-Cet article décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
-Ceci permet d'avoir des instructions de taille arbitraire.
+  Dans une architecture de von Neumann, les échanges de données représentent le gros de l'énergie dépensée.
+Or le processeur communique avec la mémoire au moyen d'un bus d'adresse et d'un bus de données de grandes tailles (entre 8 et 64 bits).
+Cette granularité contraint ces échanges, et en particulier l'encodage des instructions du processeur.
+Cet article étudie ce qui est possible en levant cette contrainte.
+Il propose une architecture 64 bits dont la mémoire est adressable par bit, ce qui permet des instructions de taille arbitraire.
 Pour ne pas devoir envoyer une adresse complète à la mémoire à chaque accès, la solution proposée est l'usage de pointeurs auto-incrémentés dupliqués dans la mémoire et le processeur.
 
 Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon.
@@ -58,18 +58,18 @@ Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal d
 %=========================================================
 \section{Introduction et motivation}
 % =========================================================
-Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de von Neumann, interfacé à une mémoire par un bus d'adresse et un bus de données comme schématisé sur la figure~\ref{fig:mvn}.
+Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de von Neumann, interfacé à une mémoire par un bus d'adresse et un bus de données  (figure~\ref{fig:mvn}).
 
 \newcommand{\figVonNeumann}{
   \begin{tikzpicture}
-    \node[hwblock, minimum width=15ex,minimum height=14ex] (p) at (0,0)  {Processeur} ;
-    \node[hwblock, minimum width=15ex,minimum height=14ex] (m) at (30ex,0)  {Mémoire} ;
+    \node[hwblock, minimum width=13ex,minimum height=13ex] (p) at (0,0)  {Processeur} ;
+    \node[hwblock, minimum width=13ex,minimum height=13ex] (m) at (30ex,0)  {Mémoire} ;
     \draw[hwbus,->] (p.25) -- (m.155) node[midway,above=1ex]{adresse} node[midway]{/} node[midway, below right]{$w_a$};
     \draw[hwbus,<->] (p.335) -- (m.205) node[midway,below]{données} node[midway]{/} node[midway, above left]{$w_d$};
   \end{tikzpicture}
 }
 
-\begin{figure}[ht]
+\begin{figure}[b]
   \begin{center}
     \figVonNeumann
   \end{center}
