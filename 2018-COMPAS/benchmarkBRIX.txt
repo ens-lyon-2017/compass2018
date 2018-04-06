@@ -1,8 +1,1 @@
-
-Première exécution: (ligne du tableau de stats)
- Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
- 63.4% & 10.8% & 10.2% & 7.6% & 8.0% \\ 
- 
- Seconde exécution: (avec l'encodage de huffman)
-  Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
- 63.2% & 10.7% & 10.0% & 7.7% & 8.5% \\ 
+Le benchmark sur Brix a été réalisé en faisant 2 parties d'exactement une minute chacune de BRIX la première avec l'encodage classique et la seconde avec l'encodage de huffman optimal.

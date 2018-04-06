@@ -1,3 +1,6 @@
+Chip 8 size:
+Written instructions: 768
+Written bits:         14155
 
 
 -----------------------------------------------
@@ -6,55 +9,54 @@ Exchanges between the Memory and the Processor:
 
  Exchange Type    | Bits Exchanged | Proportion
 
- Instruction Read |       32474350 | 63.4%
- Memory Read      |        5526518 | 10.8%
- Memory Write     |        5220136 | 10.2%
- Get/Set Counters |        3883605 | 7.6%
- Call/Return      |        2350450 | 4.6%
- Jump             |        1732528 | 3.4%
- Total            |       51187587 | 100.0%
+ Instruction Read |       68683193 | 64.3%
+ Memory Read      |       11114886 | 10.4%
+ Memory Write     |       10355680 | 9.7%
+ Jump/Call/Return |        8643141 | 8.1%
+ Get/Set Counter  |        7961013 | 7.5%
+ Total            |      106757913 | 100.0%
 
 
 -----------------------------------------------
 Exchanges between the Memory and the Processor:
 -----------------------------------------------
 
- Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump \\ 
- 63.4% & 10.8% & 10.2% & 7.6% & 8.0% \\ 
-0 add2 37696
-1 add2i 43596
+ Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump & Total of exchanged bits \\ 
+ 64.3 \% & 10.4 \% & 9.7 \% & 7.5 \% & 8.1 \% & 1.068e+08\\ 
+0 add2 84421
+1 add2i 93893
 2 sub2 0
-3 sub2i 16412
-4 cmp 20059
-5 cmpi 201651
-6 let 107083
-7 leti 103836
-8 shift 53368
-9 readze 171915
+3 sub2i 44955
+4 cmp 38718
+5 cmpi 438005
+6 let 221158
+7 leti 215577
+8 shift 123061
+9 readze 359448
 10 readse 0
-11 jump 21451
-12 jumpif 238210
-13 or2 5955
+11 jump 46457
+12 jumpif 522354
+13 or2 16172
 14 or2i 0
 15 and2 0
-16 and2i 10298
-17 write 53271
-18 call 108628
-19 setctr 225920
-20 getctr 112355
-21 push 70157
-22 return 108627
-23 add3 29
-24 add3i 17686
-25 sub3 128
+16 and2i 23482
+17 write 107337
+18 call 219102
+19 setctr 468951
+20 getctr 239750
+21 push 139988
+22 return 219101
+23 add3 115
+24 add3i 35390
+25 sub3 454
 26 sub3i 0
-27 and3 1048
-28 and3i 18938
+27 and3 2735
+28 and3i 38594
 29 or3 0
 30 or3i 0
-31 xor3 14
-32 xor3i 5907
+31 xor3 57
+32 xor3i 15934
 33 asr3 0
-34 sleep 1557
+34 sleep 2989
 35 rand 5
 36 (res) 0
