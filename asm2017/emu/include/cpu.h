@@ -111,7 +111,7 @@ uint cpu_read_write_bits_count(void);
 	cpu_setctr_count() -- statistics about the number of bit
 	sent to the memory when calling `setctr`.
 */
-uint cpu_setctr_bits_count(void);
+uint cpu_ctr_access_bits_count(void);
 
 /*
 	cpu_jump_count() -- statistics about the number of bit
@@ -119,5 +119,11 @@ uint cpu_setctr_bits_count(void);
 	or return.
 */
 uint cpu_jump_bits_count(void);
+
+/*
+	cpu_set_counting_method() -- Set the counting method to `cm`.
+	`cm` must be an integer between 1 and 4.
+*/
+void cpu_set_counting_method(uint cm);
 
 #endif	/* CPU_H */

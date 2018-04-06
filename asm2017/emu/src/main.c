@@ -427,10 +427,10 @@ void print_stats(int latex)
 	uint64_t instr_bits = cpu_instruction_bits_count();
 	uint64_t read_write_bits = cpu_read_write_bits_count();
 	uint64_t jump_bits = cpu_jump_bits_count();
-	uint64_t setctr_bits = cpu_setctr_bits_count();
+	uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
 
 	uint64_t data_exchange = instr_bits + read_write_bits + \
-				 jump_bits + setctr_bits;
+				 jump_bits + ctr_access_bits;
 
 	printf("\n-----------------------------------------------\n");
 	printf("Exchanges between the Memory and the Processor:\n");
@@ -442,8 +442,8 @@ void print_stats(int latex)
 		(100.0 * read_write_bits) / data_exchange);
 	printf(" Jump/Call/Return |   %12ld | %.1f%%\n", jump_bits,
 		(100.0 * jump_bits) / data_exchange);
-	printf(" Setctr           |   %12ld | %.1f%%\n", setctr_bits,
-		(100.0 * setctr_bits) / data_exchange);
+	printf(" Get/Set Counter  |   %12ld | %.1f%%\n", ctr_access_bits,
+		(100.0 * ctr_access_bits) / data_exchange);
 	printf(" Total            |   %12ld | 100.0%%\n\n", data_exchange);
 
 
@@ -463,7 +463,7 @@ void print_stats(int latex)
         printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
                (100.0 * instr_bits) / data_exchange,
                (100.0 * read_write_bits) / data_exchange,
-	       (100.0 * setctr_bits) / data_exchange,
+	       (100.0 * ctr_access_bits) / data_exchange,
                (100.0 * jump_bits) / data_exchange,
                (double) data_exchange);
     }
