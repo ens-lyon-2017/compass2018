@@ -108,9 +108,16 @@ uint cpu_instruction_bits_count(void);
 uint cpu_read_write_bits_count(void);
 
 /*
-	cpu_counter_sync_count() -- statistics about the number of bits
-	exchanged between the processor and the memory when writing the memory.
+	cpu_setctr_count() -- statistics about the number of bit
+	sent to the memory when calling `setctr`.
 */
-uint cpu_counter_sync_bits_count(void);
+uint cpu_setctr_bits_count(void);
+
+/*
+	cpu_jump_count() -- statistics about the number of bit
+	sent to give the value of the new PC when calling jump, jumpif, call
+	or return.
+*/
+uint cpu_jump_bits_count(void);
 
 #endif	/* CPU_H */
