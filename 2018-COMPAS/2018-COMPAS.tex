@@ -303,6 +303,9 @@ boucle:	                                 ; ceci est une étiquette (label)
 \fi
 \end{figure}
 
+\subsection{Transfert des bits à l'exécution}
+
+Les premières mesures faites sur ce processeur montraient qu'un bon tiers des bits échangés étaient dus à la synchronisation des compteurs entre la mémoire et le processeur. Typiquement, le \texttt{push} coûtait 128 bits à chaque utilisation, ce qui était coûteux par exemple dans la multiplication de matrices creuses. On a donc imaginé posséder un mode d'adressage avec pré-décrément, mais malgré cela, les coûts restaient très élevés. Le problème est qu'on envoie souvent des bits inutiles : lorsqu'on déplace un pointeur (par exemple le pc lors d'un saut), on le fait souvent à proximité de son ancienne valeur. Ainsi seuls les bits de poids faible changent entre l'ancienne et la nouvelle valeur. Or, on possède une copie des compteurs dans le processeur. On peut donc n'envoyer que ces bits de poids faible. Cette amélioration nous a permis de diviser par 10 la quantité de bits échangés pour synchroniser les compteurs, et ainsi rendre majoritaires les bits de code.
 
 %
 \iffalse
@@ -365,8 +368,6 @@ Le produit de matrice utilise la multiplication précédente, mais les matrices 
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
 Ce benchmark fait tourner le jeu BRIX pendant exactement une minute par partie.
 Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
-Pourtant on voit que les transferts de code restent majoritaires.
-
 
 La première expérience consiste à utiliser l'encodage initial.
 Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction.%. (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
@@ -375,7 +376,7 @@ Les résultats correspondants sont donnés dans la première  ligne pour chaque 
 
 La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufmann optimal \emph{pour ce benchmark}.
 %Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
-L'intérêt de cette seconde expérience est de donner une borne inférieure: l'idée de changer l'encodage des instructions en fonction du programme va au dela de la présente étude.
+L'intérêt de cette seconde expérience est de donner une borne inférieure: l'idée de changer l'encodage des instructions en fonction du programme va au-delà de la présente étude.
 Du reste, on voit que l'encodage des opcodes peut être amélioré, mais que les gains à espérer restent faibles.
 
 
@@ -567,7 +568,7 @@ Tableau d'amélioration du nombre de bits de compteurs.
       benchmark   & sans dédoubl.  & avec dédoubl.  & pré-décrément & syncro. futée    \\
       \hline  
       \hline
-      binmult & 512 & 512 & 512 & 44 \\
+      binmult & 512 & 100\% & 100\% & 8.59 \% \\
       \hline
       matmul & 212018368 & 97.93\% & 95.85\% & 9.75\% \\
       \hline
