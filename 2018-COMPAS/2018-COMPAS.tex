@@ -351,18 +351,25 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 
 \section{Premières expériences}
 Ces expériences portent sur une petite suite de benchmarks, écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture.
+Quelques résultats sont rapportés dans la table~\ref{tab:bitcounts}.
 
-\textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, il fait manipuler l'arithmétique de bas niveau.
-les étudiants ont dû écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même. Le c\oe ur de boucle est encodé en 69 bits.
-Pour comparaison, un programme similaire compilé pour le processeur RISC 16 bits MSP430, 10 instructions aussi, consomme  24 octets, soit 192 bits, dont 96 pour le c\oe ur de boucle.
-Notre encodage est donc clairement plus compact, pour un processeur 64 bits.
+\textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, pour faire manipuler l'arithmétique de bas niveau.
+les étudiants ont donc dû écrire le programme de la figure~\ref{fig:exempleasm}, et même l'assembler à la main dans un premier temps.
+Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même.
+Le c\oe ur de boucle est encodé en 69 bits.
+% Pour comparaison, un programme similaire compilé pour le processeur RISC 16 bits MSP430, 10 instructions aussi, consomme  24 octets, soit 192 bits, dont 96 pour le c\oe ur de boucle.
+% A l'exécution, 
+% Notre encodage est donc clairement plus compact, pour un processeur 64 bits.
 % voir le répertoire MSP430
 
 
 
 
 \textbf{Produit de matrice}
-Le produit de matrice utilise la multiplication précédente, mais les matrices sont lues et écrites en mémoire.
+C'est un produit de matrices 32x32 d'entiers 64 bits aléatoires.
+Ce programme utilise la multiplication entière précédente, mais les matrices sont lues et écrites en mémoire.
+On présente deux simulations: la première avec des matrices pleines, et la seconde avec des matrice creuse (en moyenne 90\% de 0).
+Les multiplications par 0 terminant instantanément, mais étant tout de même stocké en mémoire comme 64 bits, cette seconde version provoque un rapport bits de données / bits de code plus élevé.
 
 \textbf{Chip8}
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
@@ -374,7 +381,7 @@ Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction.
 D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
 Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
 
-La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufmann optimal \emph{pour ce benchmark}.
+La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufman optimal \emph{pour ce benchmark}.
 %Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
 L'intérêt de cette seconde expérience est de donner une borne inférieure: l'idée de changer l'encodage des instructions en fonction du programme va au-delà de la présente étude.
 Du reste, on voit que l'encodage des opcodes peut être amélioré, mais que les gains à espérer restent faibles.
@@ -401,33 +408,35 @@ idem mais avec python3 ./matmulstat/makematrix.py 0.1 pour une matrice creuse
 
 \begin{table}
   \centering
-  \begin{tabular}{|c||c|c|c||c|c|c|c|c||c|}
+  \begin{tabular}{|r||c|c|c||c|c|c|c|c||c|}
     \hline
     & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exécution}                    \\
     \hline
 
     
-    benchmark    & instr & bits & bpi  & prog    & data R & data W & counters & branch  & total \\
+    benchmark      & instr     & bits       & bpi         & prog    & data R  & data W  & counters & branch  & total      \\
     \hline
     \hline
-    binmult,init & 10    & 125  & 12.5 & 89.4\%  & 0.0 \% & 0.0 \% & 0.0 \%   & 10,6\%  & 415   \\
-    binmult, opt &       & 113  & 11.3 & 85.5 \% & 0.0 \% & 0.0 \% & 0.0 \%   & 14.5 \% & 373   \\
+    binmult~~~I    & 10        & 125        & 12.5        & 89.4\%  &         &         &          & 10,6\%  & 415        \\
+     H             &           & 113        & 11.3        & 85.5 \% &         &         &          & 14.5 \% & 373        \\
+    \emph{ msp430} & \emph{10} & \emph{192} & \emph{19.2} & --      & --      & --      & --       & --      & \emph{960} \\
     \hline
-    matmul,init & 112 & 1632 & 14.6 &  80.4 \% & 5.0 \% & 2.6 \% & 0.3 \% & 11.8 \% & 172089510\\ 
-    matmul,opt & 112 & 1817 & 16.2  &  75.4 \% & 5.6 \% & 2.9 \% & 0.3 \% & 15.9 \% & 153823310\\ 
     \hline
-    matmul*,init & 112 & 1632 & 14.6 & 55.3 \% & 23.3 \% & 12.1 \% & 1.2 \% & 8.0 \% & 36811302 \\ 
+    matmul~~~I     & 112       & 1632       & 14.6        & 80.4 \% & 5.0 \%  & 2.6 \%  & 0.3 \%   & 11.8 \% & 1.72e8     \\ 
+     (dense)~  H           & 112       & 1817       & 16.2        & 75.4 \% & 5.6 \%  & 2.9 \%  & 0.3 \%   & 15.9 \% & 154e8      \\ 
+    \hline
+    matmul~~~I    & 112       & 1632       & 14.6        & 55.3 \% & 23.3 \% & 12.1 \% & 1.2 \%   & 8.0 \%  & 3.68e7     \\ 
 
-    matmul*,opt & 112 & 1613 & 14.4  & 52.1 \% & 25.2 \% & 13.1 \% & 1.3 \% & 8.3 \% & 34080895\\ 
+    (sparse)~ H & 112 & 1613 & 14.4  & 52.1 \% & 25.2 \% & 13.1 \% & 1.3 \% & 8.3 \% & 341e7\\ 
 
     \hline
-    Chip8      & 768 & 14155 & 18.4 &  64.3 \% & 10.4 \% & 9.7 \% & 7.5 \% & 8.1 \% & 1.068e+08       \\
-    Chip8 opt    & 768 & 13699 & 17.8 & 63.1 \% & 10.7 \% & 9.9 \% & 7.7 \% & 8.6 \% & 1.063e+08\\ 
+    \hline
+    Chip8~~~I     & 768 & 14155 & 18.4 &  64.3 \% & 10.4 \% & 9.7 \% & 7.5 \% & 8.1 \% & 1.068e8       \\
+     H    & 768 & 13699 & 17.8 & 63.1 \% & 10.7 \% & 9.9 \% & 7.7 \% & 8.6 \% & 1.063e8\\ 
     \hline
   \end{tabular}
-  \caption{Nombre de bits échangés par benchmark. La colonne à partir de \texttt{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
+  \caption{Nombre de bits échangés par benchmark. Encodage des opcodes: I initial, H Huffman. Les colonne à partir de \emph{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
   \label{tab:bitcounts}
-  La deuxième multiplication matricielle a été faite sur matrice creuse (en moyenne 90\% de 0).
 \end{table}
 
 
@@ -467,8 +476,8 @@ La principale arithmétique des compteurs est un incrément. Ainsi, en rajoutant
 \section{Conclusion et perspectives d'améliorations}
 
 Les premiers résultats de cette étude sont encourageants, puisqu'on arrive à des encodages d'instructions en moins de 16 bits de moyenne, opérandes compris.
-Nous proposons donc une ISA 64 bits compétitive en taille de code avec la génération 8 bits ou les microcontroleurs récents 16 bits.
-Nous disposons d'un couple (assembleur, simulateur) dans lequel l'encodage des opcodes est paramétrables, ce qui permet aussi d'ajouter facilement des instructions.
+Nous proposons donc une ISA 64 bits dont la taille de code est compétitive avec celle de la génération 8 bits ou des microcontroleurs récents 16 bits.
+Nous disposons d'un assembleur et d'un simulateur dans lesquels l'encodage des opcodes est paramétrable, ce qui permet aussi d'ajouter facilement des instructions.
 
 
 
@@ -574,7 +583,8 @@ Tableau d'amélioration du nombre de bits de compteurs.
       \hline
       matmul* & 35318976 & 87.55\% & 75.09\% & 8.93\% \\
       \hline
-      chip8 & & & &\\
+      chip8 & 118451648 & 81.98\% & 73.34\% & 14.29\% \\
+      
       \hline
     \end{tabular}
   \end{center}
