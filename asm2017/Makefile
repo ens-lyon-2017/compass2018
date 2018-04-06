@@ -1,6 +1,7 @@
 #! /usr/bin/make -f
 
-all:
+all:	
+	python3 matmulstat/makematrix.py
 	(cd prog; make all)
 	(cd emu; make emu)
 	(cd chip8; make)

@@ -34,6 +34,7 @@ typedef struct
 	uint graphical	:1;
 	uint stats	:1;
 	uint stats_tex	:1;
+	uint basic_stats:1;
 	uint counting_method;
 	uint instr_counts	:1;
 	uint help	:1;
@@ -151,7 +152,8 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->stats = 1;
 		else if(!strcmp(arg, "-t") || !strcmp(arg, "--tex"))
 			opt->stats_tex = 1;
-
+		else if(!strcmp(arg, "--basic"))
+			opt->basic_stats = 1;
 		else if(!strcmp(arg, "-cm") ||
 			!strcmp(arg, "--counting-method"))
 		{
@@ -272,6 +274,7 @@ const char *help_string =
 "  -i                 Print the number of use of each instruction\n"
 "  --state            Print the state of the processor at the end of the\n"
 "                     execution.\n"
+"  --basic            Only shows the counter bits exchanged, without distinction"
 ;
 
 /* Emulated memory and CPU */
@@ -420,8 +423,17 @@ void chip8(const uint8_t *keyboard, void *arg)
 }
 
 /*
+	print_basic_stats() -- prints stats for the second benchmark
 	print_stats() -- print statistics about memory/CPU exchanges
 */
+
+void print_basic_stats()
+{
+  	uint64_t jump_bits = cpu_jump_bits_count();
+	uint64_t ctr_access_bits = cpu_ctr_access_bits_count();
+	printf("%ld & ",ctr_access_bits+jump_bits);
+}
+
 void print_stats(int latex)
 {
 	uint64_t instr_bits = cpu_instruction_bits_count();
@@ -451,22 +463,22 @@ void print_stats(int latex)
         Asked by Florent
         Print the stats in a Tex friendly way
     */
-    if(latex)
-    {
-        printf("\n-----------------------------------------------\n");
-        printf("Exchanges between the Memory and the Processor:\n");
+	if(latex==1){
+	printf("\n-----------------------------------------------\n");
+	printf("Exchanges between the Memory and the Processor:\n");
         printf("-----------------------------------------------\n\n");
 
-        printf(" Instruction Read & Memory Read/Write & Get/Set Counters & Call/Return/Jump & Total "
+	printf(" Instruction Read & Memory Read/Write & Get/Set Counters & Call/Return/Jump & Total "
 
-                       "of exchanged bits \\\\ \n");
-        printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
-               (100.0 * instr_bits) / data_exchange,
-               (100.0 * read_write_bits) / data_exchange,
+		       "of exchanged bits \\\\ \n");
+	printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
+	       (100.0 * instr_bits) / data_exchange,
+	       (100.0 * read_write_bits) / data_exchange,
 	       (100.0 * ctr_access_bits) / data_exchange,
-               (100.0 * jump_bits) / data_exchange,
-               (double) data_exchange);
-    }
+	       (100.0 * jump_bits) / data_exchange,
+	       (double) data_exchange);
+	
+	}
 }
 
 /*
@@ -628,6 +640,7 @@ int main(int argc, char **argv)
 	}
 
 	if(opt.stats) print_stats(opt.stats_tex);
+	if(opt.basic_stats) print_basic_stats();
 	if(opt.instr_counts) print_instr_counts();
 
 	return 0;
