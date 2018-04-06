@@ -41,7 +41,7 @@
 \sloppy
 
 \begin{abstract}
-Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresses et d'un bus de données de grandes tailles (entre 8 et 64 bits).
+Dans une architecture de von Neumann, le processeur communique avec la mémoire au moyen d'un bus d'adresse et d'un bus de données de grandes tailles (entre 8 et 64 bits).
 Cette granularité contraint l'encodage des instructions du processeur, comme le montre un survol historique des jeux d'instruction.
 Or les échanges de données représentent le gros de l'énergie dépensée.
 Cet article décrit une architecture 64 bits dont la mémoire est adressable par bit, avec un seul signal de données entre le processeur et la mémoire.
@@ -51,7 +51,7 @@ Pour ne pas devoir envoyer une adresse complète à la mémoire à chaque accès
 Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon.
 Un premier jeu d'instruction a été défini en TD et son encodage choisi à la main.
 Ceci a permis aux étudiants d'écrire en binôme un assembleur et un simulateur, puis plusieurs milliers de lignes de programmes allant du petit noyau de calcul au jeu vidéo et à l'émulateur.
-Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions des instructions en fonction de leur fréquence, et les comparer à l'encodage initial.
+Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions en fonction de leur fréquence, et les comparer à l'encodage initial.
  Ces expérimentations ont aussi montré les limites de cette première approche, et l'article discute  des solutions pour y remédier.
 \end{abstract}
 
@@ -97,7 +97,7 @@ Mais ces registres sont des vecteurs de données d'au plus 64 bits.
 
 
 Une question intéressante, et qui commence à toucher le jeu d'instruction, est  la granularité à laquelle on peut adresser la mémoire.
-L'ancêtre 4004 et le processeur Saturn des calculettes HP adressaient leur mémoire par cases de 4 bits: ceci correspondait au besoin du décimal codé en binaire.
+L'ancêtre 4004 et le processeur Saturn des calculettes HP adressaient leur mémoire par case de 4 bits: ceci correspondait au besoin du décimal codé en binaire.
 La plupart des processeurs (dont les Intel/AMD de nos PC et les ARM de nos gadgets) adressent leur mémoire par octet pour être efficaces sur le traitement de texte.
 
 % \subsection{Pourquoi pas l'adressabilité au bit près?}
@@ -113,7 +113,7 @@ Si l'ISA définit une mémoire adressable par octet, l'accès physique à la mé
  On peut estimer que passer d'un adressage par octet à un adressage au bit ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
 
 
-Ce qu'on gagne à avoir une adresse pour chaque bit, c'est que la tailles des données et des instructions peut être variable au bit près: on peut espérer n'envoyer que les bits utiles.
+Ce qu'on gagne à avoir une adresse pour chaque bit, c'est que la taille des données et des instructions peut être variable au bit près: on peut espérer n'envoyer que les bits utiles.
 Comme exemple d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
 Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses  motivations reste: 
 d'après Dally, \emph{fetching operands costs more than computing on them}, et l'on parle d'un facteur 1000 \cite{Dally:SC2010}.
@@ -121,7 +121,7 @@ d'après Dally, \emph{fetching operands costs more than computing on them}, et l
 
 Il y a aussi des applications, comme les réseaux de neurones, qui se contentent très bien de données sur de très petites précision, voire des données binaires \cite{AndriCRB16,AlemdarEtAl2017:TernaryCNN,AmiriEtAl2018:mixedPrecCNN,Preusser:DATE2018:heteroCNN}. 
 
-Attention, il ne faut pas que l'on ait à envoyer 64 bits d'adresse pour chaque bit de donnée échangé, ce qui serait bien pire que le faire pour chaque octet. 
+Attention, il ne faut pas que l'on ait à envoyer 64 bits d'adresse pour chaque bit de données échangé, ce qui serait bien pire que le faire pour chaque octet. 
 Reprendre la figure \ref{fig:mvn} en fixant juste $w_d=1$ serait contre-productif.
 
 Ce travail essaye d'imaginer une architecture (au sens ISA) dans laquelle on peut tailler instructions et données au bit près, et ne payer que pour les bits effectivement transférés.
@@ -147,10 +147,10 @@ Résumé des objectifs pédagogiques du cours ASR1
 Pour concrétiser l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
 Les données passent en série, bit à bit, sur le fil \texttt{D}.
 Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
-Pour ne pas avoir à transmettre une adresse de $n$ nbits par bit de donnée, les adresses sont le plus souvent implicites.
+Pour ne pas avoir à transmettre une adresse de $n$ bits par bit de donnée, les adresses sont le plus souvent implicites.
 Dans ce but, on a 4 compteurs, répliqués dans le processeur et la mémoire.
 Le pointeur de programme, PC, est l'un de ces compteurs.
-Il s'autoincrémente, classiquement, au cours de la lecture d'une instruction et pour passer à l'instruction suivante.
+Il s'auto-incrémente, classiquement, au cours de la lecture d'une instruction et pour passer à l'instruction suivante.
 
 Pour lire une donnée, le processeur sélectionne un des compteurs en positionnant les deux bits  \texttt{Select}.
 Puis il lève \texttt{Read}.
@@ -161,7 +161,7 @@ Le mécanisme est similaire en cas d'écriture.
 Les instructions de lecture/écriture mémoire ne donnent pas d'adresse, mais précisent un compteur (encodé sur 2 bits) et le nombre de bits mémoire à lire/écrire (parmi 1, 4, 8, 16, 32 et 64 bits, encodé par un code prefix-free sur 2 ou 3 bits).
 Il faut aussi des instructions qui permettent de transférer un registre dans un compteur ou inversement.
 Ces instructions ont un encodage compact (le code op, suivi du registre encodé sur 3 bits et du compteur encodé sur 2).
-Par contre, leur exécition provoque bien plus de transferts de bits: par exemple pour changer un compteur, le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
+Par contre, leur exécution provoque bien plus de transferts de bits: par exemple pour changer un compteur, le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur sélectionné par \texttt{Select}, poids faibles en tête.
 Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
 Si le compteur était le PC, on a réalisé un saut.
 
@@ -201,9 +201,9 @@ Cette interface ne dépend pas de la taille mémoire, ni de la puissance du proc
 \end{figure}
 
 \subsection{Comparaison avec une architecture classique}
-Si l'on compare la figure~\ref{fig:overview} avec la figure~\ref{fig:mvn} lors de l'exécution d'un programme classique, il est clair que notre proposition dégrade le temps d'exécution, puisque la transmission de la moindre instruction et la moindre donnée demandent plusieurs cycles d'horloge.
+Si l'on compare la figure~\ref{fig:overview} avec la figure~\ref{fig:mvn} lors de l'exécution d'un programme classique, il est clair que notre proposition dégrade le temps d'exécution, puisque la transmission de la moindre instruction et de la moindre donnée demande plusieurs cycles d'horloge.
 
-Si par contre on s'intéresse aux nombre de transitions sur les fils (une métrique raisonnable pour mesurer la consommation dynamique), on peut faire les observations suivantes.
+Si par contre on s'intéresse au nombre de transitions sur les fils (une métrique raisonnable pour mesurer la consommation dynamique), on peut faire les observations suivantes.
 
 \begin{itemize}
 \item Dans la lecture de données consécutives en mémoire, notre proposition fait l'économie de toutes les transitions sur le bus d'adresse.
@@ -217,22 +217,13 @@ Pour cela nous nous efforçons principalement de minimiser la taille de l'encoda
 
 \subsection{un c\oe ur  RISC}
 Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres 32 ou 64 bits.  
-Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique (encoder le numéro de registre sur aussi peu de bits que possible).
+Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique: encoder le numéro de registre sur aussi peu de bits que possible.
 Il est rediscuté en \ref{sec:amelioration}. 
-
-
-
-
-
-
-
 
 
 \section{Présentation du jeu d'instruction initial}
 Le jeu d'instruction décrit dans cette section est l'aboutissement des deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
-Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
-
-
+Les choix faits ne sont pas toujours ceux qui étaient considérés comme les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 % \subsection{Généralités sur les jeux d'instructions}
 % Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
 % \todo{blabla}
@@ -260,7 +251,7 @@ En particulier, les constantes commencent par un préfixe qui décrit le nombre 
 Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bits, alors que les grandes constantes son également encodables.
 Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
 
-On a un encodage différent pour les constantes pour différentes classes d'instructions (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
+On a un encodage des constantes différent pour chaque classe d'instruction (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
 
 
 \begin{table}
@@ -269,7 +260,7 @@ On a un encodage différent pour les constantes pour différentes classes d'inst
   \caption{Encodage \emph{prefix-free} des différentes constantes}
   \begin{tabular}{|l||l||l|}
     \hline
-    adresses et déplacement & constantes ALU & constantes de shift                   \\
+    adresses et déplacements & constantes ALU & constantes de shift                   \\
     \hline
     0 + 8 bits              & 0 + 1 bit      & 0 + 6 bits  (constante entre 0 et 63) \\
     \hline         
@@ -359,7 +350,7 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
 Ces expériences portent sur une petite suite de benchmarks, écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture.
 
 \textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, il fait manipuler l'arithmétique de bas niveau.
-les étudiants ont du écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même. Le coeur de boucle est encodé en 69 bits.
+les étudiants ont dû écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même. Le c\oe ur de boucle est encodé en 69 bits.
 Pour comparaison, un programme similaire compilé pour le processeur RISC 16 bits MSP430, 10 instructions aussi, consomme  24 octets, soit 192 bits, dont 96 pour le c\oe ur de boucle.
 Notre encodage est donc clairement plus compact, pour un processeur 64 bits.
 % voir le répertoire MSP430
@@ -372,7 +363,7 @@ Le produit de matrice utilise la multiplication précédente, mais les matrices 
 
 \textbf{Chip8}
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
-Ce benchmark fait tourner le jeu BRIX pendant 50000 instructions.
+Ce benchmark fait tourner le jeu BRIX pendant exactement une minute par partie.
 Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
 Pourtant on voit que les transferts de code restent majoritaires.
 
