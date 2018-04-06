@@ -4,10 +4,11 @@
 \toappear{1} % Conserver cette ligne pour la version finale
 
 \usepackage{tikz}
+\usetikzlibrary{arrows.meta}
 \tikzset{
   hwblock/.style={draw, rectangle, rounded corners=.3, very thick, fill=black!5, font=\sf, minimum height=5ex},
   hwbus/.style={very thick,>=stealth},
-  hwwire/.style={thin, >=stealth, },
+  hwwire/.style={thick,>=stealth},
   hwword/.style={draw, rectangle, minimum height=3ex},
   bitwidth/.style={font=\scriptsize,midway,right}
 }
@@ -109,9 +110,7 @@ Attention, on parle ici de l'abstraction offerte par le jeu d'instruction, pas d
 Les deux sont déjà différentes dans les processeurs actuels.
 Si l'ISA définit une mémoire adressable par octet, l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
 %Ceci explique aussi les contraintes d'alignement pour les données de grande taille.
-
-Passer d'un adressage par octet à un adressage au bit complique légèrement l'interface processeur-cache:
-on peut estimer que cela ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
+ On peut estimer que passer d'un adressage par octet à un adressage au bit ajoute trois niveaux de multiplexeurs au décodage de la ligne de cache, un changement plus quantitatif que qualitatif.
 
 
 Ce qu'on gagne à avoir une adresse pour chaque bit, c'est que la tailles des données et des instructions peut être variable au bit près: on peut espérer n'envoyer que les bits utiles.
@@ -145,7 +144,7 @@ Résumé des objectifs pédagogiques du cours ASR1
 
 
 \section{Architecture générale et interface mémoire}
-Pour donner une interface simple à l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
+Pour concrétiser l'adressabilité au bit près, nous proposons une interface processeur-mémoire strictement série représentée sur la figure~\ref{fig:overview}.
 Les données passent en série, bit à bit, sur le fil \texttt{D}.
 Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \texttt{Write}.
 Pour ne pas avoir à transmettre une adresse de $n$ nbits par bit de donnée, les adresses sont le plus souvent implicites.
@@ -159,11 +158,14 @@ Tant que \texttt{Read} vaut 1, le compteur sélectionné s'incrémente (côté p
 Lorsque le processeur décide qu'il a lu toute une donnée, il baisse \texttt{Read}.
 Le mécanisme est similaire en cas d'écriture.
 
-Il faut naturellement des instructions qui permettent de changer les compteurs: pour cela le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
+Les instructions de lecture/écriture mémoire ne donnent pas d'adresse, mais précisent un compteur (encodé sur 2 bits) et le nombre de bits mémoire à lire/écrire (parmi 1, 4, 8, 16, 32 et 64 bits, encodé par un code prefix-free sur 2 ou 3 bits).
+Il faut aussi des instructions qui permettent de transférer un registre dans un compteur ou inversement.
+Ces instructions ont un encodage compact (le code op, suivi du registre encodé sur 3 bits et du compteur encodé sur 2).
+Par contre, leur exécition provoque bien plus de transferts de bits: par exemple pour changer un compteur, le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur selectionné par \texttt{Select}, poids faible en tête.
 Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
 Si le compteur était le PC, on a réalisé un saut.
 
-Un intérêt de cette interface est qu'elle ne dépend pas ni de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
+Cette interface ne dépend pas de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
 \begin{figure}[h]
     \begin{center}
   \begin{tikzpicture}
@@ -237,7 +239,7 @@ Les choix faits ne sont pas toujours ceux qui étaient considérés les meilleur
 
 \subsection{Format général des instructions}
 Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
-Les mnémoniques sont écrits exactement dans le même ordre (voir la figure~\ref{fig:exempleasm}).  
+Les mnémoniques sont écrits exactement dans le même ordre (voir la figure~\ref{fig:exempleasm} pour un exemple).  
 Une fois que le processeur a reçu l'opcode, il sait combien d'opérande il doit recevoir et quel est leur type.
 
 
@@ -247,6 +249,7 @@ Par exemple, \\
  \texttt{add2 r0 r1}&& réalise $r_0 \leftarrow r_0+r_1$. \\
  \texttt{add3 r0 r1 r2}&& réalise $r_0 \leftarrow r_1+r_2$.
   \end{tabular}
+  
   Dans les programmes écrits à la main, il faut constater qu'on a utilisé surtout les versions à 2 opérandes.
   Ceci est similaire à l'évolution du jeu d'instruction ARM vers le mode Thumb2 qui permet d'encoder sur 16 bits des instructions à deux opérandes. 
   
@@ -258,6 +261,27 @@ Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bi
 Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
 
 On a un encodage différent pour les constantes pour différentes classes d'instructions (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
+
+
+\begin{table}
+  \label{tab:constantes}
+  \centering
+  \caption{Encodage \emph{prefix-free} des différentes constantes}
+  \begin{tabular}{|l||l||l|}
+    \hline
+    adresses et déplacement & constantes ALU & constantes de shift                   \\
+    \hline
+    0 + 8 bits              & 0 + 1 bit      & 0 + 6 bits  (constante entre 0 et 63) \\
+    \hline         
+    10 + 16 bits            & 10 + 8 bits    & 1  (constante 1)                      \\
+    \hline                  
+    110 + 32 bits           & 110 + 32 bits  &                                       \\
+    \hline                  
+    111 + 64 bits           & 111 + 64 bits  &                                       \\
+    \hline
+  \end{tabular}
+\end{table}
+
 
 
 
@@ -300,9 +324,9 @@ boucle:	                                 ; ceci est une étiquette (label)
 \end{figure}
 
 
-Les instructions de branchement sont relativement classiques.
-
+%
 \iffalse
+Les instructions de branchement sont relativement classiques.
 \subsection{Les instructions de branchement }
 \label{sec:jumpcallret}
 
@@ -319,7 +343,6 @@ L'instruction \texttt{call} copie $\texttt{a}$ dans $r_{7}$, puis réalise $\mat
 
 L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
 
-\fi
 
 \subsection{Les instructions d'accès mémoire}
 \label{sec:mem}
@@ -341,12 +364,15 @@ Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendant
   
 \end{itemize}
 
+\fi
 
-\section{Expériences}
+\section{Premières expériences}
 Ces expériences portent sur une petite suite de benchmarks, écrits en assembleur à la main puisque nous n'avons pas encore de compilateur pour cette architecture.
 
 \textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, il fait manipuler l'arithmétique de bas niveau.
-les étudiants ont du écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même.
+les étudiants ont du écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même. Le coeur de boucle est encodé en 69 bits.
+
+
 
 \textbf{Produit de matrice}
 Le produit de matrice utilise la multiplication précédente, mais les matrices sont lues et écrites en mémoire.
@@ -355,32 +381,18 @@ Le produit de matrice utilise la multiplication précédente, mais les matrices 
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
 Ce benchmark fait tourner le jeu BRIX pendant 50000 instructions.
 Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
+Pourtant on voit que les transferts de code restent majoritaires.
 
 
-\subsection{Codage de Huffman}
 La première expérience consiste à utiliser l'encodage initial.
-Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
+Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction.%. (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
 D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
 Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
 
-La seconde expérience (dont es résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) donne les valeurs obtenues lorsque le même programme utilise un encodage de Hufmann optimal \emph{pour ce benchmark}.
-Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
-Bien sûr, cette seconde expérience reviendrait à construire un processeur optimisé pour chaque benchmark, ce qui n'est pas déontologique: l'intérêt de cette seconde expérience est de donner une borne inférieure au nombre de bits échangés pour chaque benchmark. 
-
-\begin{table}
-  \centering
-  \begin{tabular}{|c||c|c|c|c|}
-    \hline
-    benchmark & add2i & .... &  \\
-    \hline
-    \hline
-  \end{tabular}
-  \caption{Pourcentage d'utilisation de quelques instructions}
-  \label{tab:opcounts}
-\end{table}
-
-\texttt{binmult} est un programme qui réalise une multiplication de 17 par 42 par additions et décalages.
-Le programme fait 125 bits dont 34 pour l'initialisation des deux arguments et 69 pour le coeur de boucle.
+La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufmann optimal \emph{pour ce benchmark}.
+%Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
+L'intérêt de cette seconde expérience est de donner une borne inférieure: l'idée de changer l'encodage des instructions en fonction du programme va au dela de la présente étude.
+Du reste, on voit que l'encodage des opcodes peut être amélioré, mais que les gains à espérer restent faibles.
 
 
 \iffalse
@@ -403,7 +415,7 @@ python3 ./matmulstat/makematrix.py
   \centering
   \begin{tabular}{|c||c|c|c||c|c|c|c|c||c|}
     \hline
-    & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exec.}                    \\
+    & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exécution}                    \\
     \hline
 
     
@@ -555,8 +567,8 @@ Tableau d'amélioration du nombre de bits de compteurs.
   \begin{itemize}
 \item \textit{reg} $\in \{\mathtt{r0}, \mathtt{r1}, ..., \mathtt{r7}\}$ et est encodé par le numéro du registre en binaire.
 \item \textit{const}, \textit{shiftval} et \textit{addr} sont définis par la table \ref{tab:constantes}. La colonne \emph{ext} de la table  \ref{tab:opcodes} précise si une constante est étendue avec son signe (s) ou des zéros (z).   
-\item  \textit{cond} est défini par la table~\ref{tab:conditions}.
-\item \ctr\ est défini par la table~\ref{tab:counters}.
+\item  \textit{cond} est une condition portant sur les drapeaux et encodée sur 3 bits.
+\item \ctr\ est un des 4 compteurs de la figure \ref{fig:overview}, encodé sur 2 bits.
 \item \textit{dir} peut être \texttt{left}, encodé par 0, ou \texttt{right}, encodé par 1.
 \end{itemize}
 \begin{center}
@@ -644,116 +656,6 @@ Tableau d'amélioration du nombre de bits de compteurs.
 
 
 
-
-\begin{table} 
-  \caption{Les 4 compteurs. Ces deux bits sont transmis sur le signal \texttt{Select} de la figure~\ref{fig:overview}. }
-  \label{tab:counters}
-\begin{center}
-  \begin{tabular}{|l|l|l|}
-    \hline  
-  encoding  & mnemonic & description \\
-    \hline  
-    \hline  
-    00& \texttt{pc} &  program counter\\
-    \hline
-    01& \texttt{sp} & stack pointer\\
-    \hline
-    10& \texttt{a0} &  generic address counter\\
-    \hline
-    11& \texttt{a1} &  generic address counter\\
-    \hline
-  \end{tabular}
-\end{center}
-\end{table}
-
-
-
-
-
-\begin{table}
-  \label{tab:constantes}
-  \centering
-  \caption{Encodage des constantes}
-  \begin{tabular}{|l|l|}
-    \hline
-    \multicolumn{2}{|c|}{\textit{addr} : Encodage \emph{prefix-free} des adresses et déplacements} \\
-    \hline
-    0 + 8 bits    & adresse ou déplacement sur 8 bits                                              \\
-    \hline
-    10 + 16 bits  &                                                                                \\
-    \hline
-    110 + 32 bits &                                                                                \\
-    \hline
-    111 + 64 bits &                                                                                \\
-    \hline
-    \hline
-    \multicolumn{2}{|c|}{\textit{shiftval} : Encodage \emph{prefix-free} des constantes de shift}  \\
-    \hline
-    0 + 6 bits    & constante entre 0 et 63                                                        \\
-    \hline
-    1             & constante 1                                                                    \\
-    \hline
-    \hline
-    \multicolumn{2}{|c|}{\textit{const} : Encodage \emph{prefix-free} des constantes ALU}          \\
-    \hline
-    0 + 1 bit     & constante 0 ou 1                                                               \\
-    \hline
-    10 + 8 bits   & octet                                                                          \\
-    \hline
-    110 + 32 bits &                                                                                \\
-    \hline
-    111 + 64 bits &                                                                                \\
-    \hline
-    \hline
-    \multicolumn{2}{|c|}{\textit{size} : Encodage \emph{prefix-free} des tailles mémoire}          \\
-    \hline
-    00            & 1 bit                                                                          \\
-    \hline
-    01            & 4 bits                                                                         \\
-    \hline
-    100           & 8 bits                                                                         \\
-    \hline
-    101           & 16 bits                                                                        \\
-    \hline
-    110           & 32 bits                                                                        \\
-    \hline
-    111           & 64 bits                                                                        \\
-    \hline
-  \end{tabular}
-\end{table}
-\newcommand{\bool}{\mathbb{B}}
-\newcommand{\booland}{\wedge}
-\newcommand{\boolor}{\vee}
-\newcommand{\boolnot}[1]{\overline{#1}}
-\begin{table} 
-  \caption{Conditions. La différence entre \texttt{sgt} et \texttt{gt} s'observe par exemple sur la comparaison entre \texttt{r0} et -1.
-}
-  \label{tab:conditions}
-\begin{center}
-  \begin{tabular}{|c|c|c||l||l|c|}
-    \hline  
-      &   &   & mnemonic                  & description (after \texttt{cmp} op1 op2)           & {implem.}                                                                           \\
-    \hline  
-    \hline  
-    0 & 0 & 0 & \texttt{eq}, \texttt{z}   & equal, op1 $=$ op2                                 & $z$                                                                                 \\
-    \hline
-    0 & 0 & 1 & \texttt{neq}, \texttt{nz} & not equal, op1 $\neq$ op2                          & $\boolnot{z}$                                                                       \\
-    \hline
-    0 & 1 & 0 & \texttt{sgt}              & signed greater than, op1 $>$ op2, two's complement & $\boolnot{z} \booland (n \booland {v}) \boolor (\boolnot{n} \booland \boolnot{v}) $ \\
-    \hline
-    0 & 1 & 1 & \texttt{slt}              & signed smaller than, op1 $<$ op2, two's complement & $(n \booland \boolnot{v}) \boolor (\boolnot{n} \booland v) $                        \\
-    \hline
-    1 & 0 & 0 & \texttt{gt}               & op1 $>$ op2, unsigned                              & $\boolnot{z} \booland \boolnot{c}$                                                  \\
-    \hline
-    1 & 0 & 1 & \texttt{ge}, \texttt{nc}  & op1 $\ge$ op2, unsigned                            & $\boolnot{c}$                                                                       \\
-    \hline
-    1 & 1 & 0 & \texttt{lt}, \texttt{c}   & op1 $<$ op2, unsigned                              & $c$                                                                                 \\
-    \hline
-    1 & 1 & 1 & {\texttt{v}}              & {two's complement overflow}                        & {$v$}                                                                               \\
-    \hline
-  \end{tabular}
-\end{center}
-\end{table} 
 
 
 

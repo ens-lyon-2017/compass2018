@@ -72,7 +72,9 @@ static uint read_write_bits_count = 0;
 static uint jump_bits_count = 0;
 
 /* Number of bits sent the the memory when calling `setctr` */
-static uint setctr_bits_count = 0;
+static uint ctr_access_bits_count = 0;
+
+static uint counting_method = 4;
 
 /*
 	set_flags()
@@ -120,6 +122,12 @@ static int vflow_add(int64_t x, int64_t y)
 */
 uint sent_ctr_bits(uint64_t prev_val, uint64_t new_val)
 {
+	// If the counting method is 1, 2 or 3, 64 bits are sent at each
+	// change.
+	if (counting_method < 4)
+		return 64;
+
+	// If the counting method is 4, only the useful bits are sent.
 	uint64_t diff = prev_val ^ new_val;
 	uint changes = 0;
 
@@ -352,7 +360,7 @@ static void setctr(cpu_t *cpu)
 	if(ptr == PC) instruction_bits_count -= cpu->r[rs] - cpu->ptr[PC];
 
 	/* Changes to the counters must be passed on to the memory */
-	setctr_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
+	ctr_access_bits_count += sent_ctr_bits(cpu->ptr[ptr], cpu->r[rs]);
 
 	cpu->ptr[ptr] = cpu->r[rs];
 
@@ -364,6 +372,10 @@ static void getctr(cpu_t *cpu)
 {
 	uint ptr = get(pointer), rd = get(reg);
 	cpu->r[rd] = cpu->ptr[ptr];
+	if (counting_method == 0)
+		// Sending 64 bits from the memory to get the counter value.
+		ctr_access_bits_count += 64;
+
 }
 
 static void push(cpu_t *cpu)
@@ -376,6 +388,13 @@ static void push(cpu_t *cpu)
 		fatal("Stack overflow (SP = %lu) at PC = %lu\n", cpu->ptr[SP],
 		cpu->ptr[PC]);
 	memory_write(cpu->mem, cpu->ptr[SP], cpu->r[rs], size);
+
+	if (counting_method == 1)
+		// Sending 64 bits from the memory to get the PC value.
+		ctr_access_bits_count += 64;
+	if (counting_method <= 2)
+		// Sending 64 bits to the memory to set the new PC value.
+		ctr_access_bits_count += 64;
 
 	read_write_bits_count += size;
 
@@ -588,7 +607,12 @@ uint cpu_jump_bits_count(void)
 	return jump_bits_count;
 }
 
-uint cpu_setctr_bits_count(void)
+uint cpu_ctr_access_bits_count(void)
 {
-	return setctr_bits_count;
+	return ctr_access_bits_count;
+}
+
+void cpu_set_counting_method(uint cm)
+{
+	counting_method = cm;
 }
