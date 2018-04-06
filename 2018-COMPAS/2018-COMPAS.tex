@@ -371,6 +371,10 @@ Ces expériences portent sur une petite suite de benchmarks, écrits en assemble
 
 \textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, il fait manipuler l'arithmétique de bas niveau.
 les étudiants ont du écrire le programme de la figure 3, et même l'assembler à la main dans un premier temps. Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même. Le coeur de boucle est encodé en 69 bits.
+Pour comparaison, un programme similaire compilé pour le processeur RISC 16 bits MSP430, 10 instructions aussi, consomme  24 octets, soit 192 bits, dont 96 pour le c\oe ur de boucle.
+Notre encodage est donc clairement plus compact, pour un processeur 64 bits.
+% voir le répertoire MSP430
+
 
 
 
@@ -472,20 +476,33 @@ La principale arithmétique des compteurs est un incrément. Ainsi, en rajoutant
 \fi
 \section{Conclusion et perspectives d'améliorations}
 
-- une étude de l'encodage d'un jeu d'instruction universel si l'on enlève la contrainte de la taille des codes
-
-- le code c'est l'essentiel des transitions (modérer en parlant des caches)
-
-- limitations de l'ISA
-
-- optimiser les accès mémoire
-
-- autocritique des benchmarks choisis
+Les premiers résultats de cette étude sont encourageants, puisqu'on arrive à des encodages d'instructions en moins de 16 bits de moyenne, opérandes compris.
+Nous proposons donc une ISA 64 bits compétitive en taille de code avec la génération 8 bits ou les microcontroleurs récents 16 bits.
+Nous disposons d'un couple (assembleur, simulateur) dans lequel l'encodage des opcodes est paramétrables, ce qui permet aussi d'ajouter facilement des instructions.
 
 
-- quel réalisme et quelles applications
 
-- un processeur dont l'encodage est reconfigurable?
+Cette approche s'accomode fort bien d'instructions très disparates en termes d'opérandes.
+Ainsi, ajouter une instruction de multiplication-accumulation à 4 arguments ne nous posera pas de problème particulier -- étendre notre ISA avec de telles instructions fait partie des pistes à explorer prochainement.
+Ceci fera grossir nos opcodes: pour un jeu d'instruction vraiment complet, nous arriverons peut-être à la conclusion que le \emph{bytecode}, l'adressabilité à l'octet, est un meilleur compromis... c'est celui de l'ISA dominante, où l'instruction \texttt{ret} s'encode toujours en 8 bits, mais plus pour des raisons historiques qu'à la suite d'une savante étude.
+
+Nous nous somme concentrés sur l'encodage des instructions.
+Du reste, dans nos expériences, le code représente toujours l'essentiel des bits échangés.
+Nous espérons que ce ne sera plus vrai pour un produit de matrices de données 64 bits.
+
+Actuellement, l'arithmétique sur les pointeurs est extrêmement coûteuse, tant en bits d'instructions qu'en bits à l'exécution.
+Nous avons commencé à étudier la possibilité de lectures/écritures avec prédécrément pour faciliter le \texttt{push} -- le \texttt{pop}, dans une pile descendante en mémoire, s'accomode très bien de nos pointeurs autoincrémentés.
+Il faut aussi étudier un mécanisme simple  d'accès indexé à la pile (SP+constante) pour permettre la compilation efficace de langages de haut niveau (enregistrements d'activation des procédures).
+Dans ce cas, on a envie de déléguer à la mémoire l'addition de SP et de la constante pour ne pas les faire transiter sur D dans les deux sens.
+Il en va de même pour un saut relatif (addition sur PC d'une constante qui est présente en mémoire dans le code).
+Le  \texttt{call addr} est encore pire, puisqu'actuellement, \texttt{addr} passe sur \texttt{D} dans un sens (comme instruction) puis dans l'autre (pour être écrit dans le PC).
+
+
+La question se pose aussi de la pertinence de ce travail pour construire un ``vrai'' processeur.
+Nous sommes conscients que notre  lien série maître/esclave entre processeur et mémoire n'est plus pertinent depuis plusieurs dizaines d'années.
+De ce point de vue, ce travail reste théorique.
+Cela dit il serait possible d'abriter notre ISA derrière un cache classique, en espérant que la compacité du jeu d'instruction permet d'économiser sur celui-ci.
+Il faudrait pour cela montrer que cette économie n'est pas anéantie par le surcoût du décodage de nos encodages \emph{prefix-free}. 
 
 
 \bibliography{biblio.bib}
