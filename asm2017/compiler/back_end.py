@@ -11,6 +11,8 @@ class BackEnd(object):
         self.line_gene = line_gene
         self.out_queue = Queue()
         self.huffman_tree = huffman_tree
+        self.instructions_written = 0
+        self.bits_written = 0
 
     def to_file(self, filename):
         with open(filename, self.write_mode) as f:
@@ -55,6 +57,8 @@ class MemonicBackEnd(BackEnd):
         if funcname == "label":
             self.out_queue.push(str(typed_args[0].raw_value) + ":")
             return
+
+        self.instructions_written += 1
 
         funcname = " "*4 + funcname + " "*(7-len(funcname))
 
@@ -115,7 +119,11 @@ class CleartextBitcodeBackEnd(BackEnd):
 
             realise_line.append(method(raw_value))
 
-        self.out_queue.push((" " if space else "").join(realise_line))
+        packet = (" " if space else "").join(realise_line)
+
+        self.instructions_written += 1
+        self.bits_written += packet.count('0') + packet.count('1')
+        self.out_queue.push(packet)
 
     def binary_repr(self, n, k, signed=False):
         """Given n an int, it return it's binary representation on k bits"""

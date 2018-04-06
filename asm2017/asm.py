@@ -48,6 +48,9 @@ if __name__ == "__main__":
     parser.add_argument('--loadhuffman',
                         help="generate the huffman tree")
 
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="report some statistics")
+
     args = parser.parse_args()
     with open(args.filename) as file:
         s = file.read()
@@ -66,7 +69,7 @@ if __name__ == "__main__":
                           generate_tree=args.huffman,
                           directory=directory,
                           filename=args.filename,
-                          load_tree=args.loadhuffman
+                          load_tree=args.loadhuffman,
                           )
 
         # print(args.output)
@@ -89,3 +92,8 @@ if __name__ == "__main__":
 
         elif type(args.output) is str:
             out.to_file(args.output)
+
+        # Promised statistics
+        if args.verbose:
+            print('Written instructions:', out.instructions_written)
+            print('Written bits:        ', out.bits_written)
