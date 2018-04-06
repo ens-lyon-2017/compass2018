@@ -21,4 +21,5 @@ next:
 	jumpif	nz nonzero
 
 ; Halt program (the emulator will detect this and avoid looping forever)
-	jump	-13
+loop:	
+	jump	loop

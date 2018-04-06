@@ -456,7 +456,9 @@ void print_stats(int latex)
         printf("\n-----------------------------------------------\n");
         printf("Exchanges between the Memory and the Processor:\n");
         printf("-----------------------------------------------\n\n");
+
         printf(" Instruction Read & Memory Read/Write & Get/Set Counters & Call/Return/Jump & Total "
+
                        "of exchanged bits \\\\ \n");
         printf(" %.1f \\%% & %.1f \\%% & %.1f \\%% & %.1f \\%% & %.3e\\\\ \n",
                (100.0 * instr_bits) / data_exchange,
