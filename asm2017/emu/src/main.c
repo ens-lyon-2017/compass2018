@@ -34,6 +34,7 @@ typedef struct
 	uint graphical	:1;
 	uint stats	:1;
 	uint stats_tex	:1;
+	uint counting_method;
 	uint instr_counts	:1;
 	uint help	:1;
 	uint chip8	:1;
@@ -131,6 +132,8 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 	/* Clear structure with default values */
 	*opt = (opt_t){ 0 };
 
+	opt->counting_method = 4;
+
 	error_clear();
 
 	for(int i = 1; i < argc; i++)
@@ -146,8 +149,21 @@ static void parse_args(int argc, char **argv, opt_t *opt)
 			opt->graphical = 1;
 		else if(!strcmp(arg, "-s") || !strcmp(arg, "--statistics"))
 			opt->stats = 1;
-        else if(!strcmp(arg, "-t") || !strcmp(arg, "--tex"))
-            opt->stats_tex = 1;
+		else if(!strcmp(arg, "-t") || !strcmp(arg, "--tex"))
+			opt->stats_tex = 1;
+
+		else if(!strcmp(arg, "-cm") ||
+			!strcmp(arg, "--counting-method"))
+		{
+			// Reading the next argument
+			if (++i == argc)
+				error("expected a value after --counting-method");
+			int cm = sizetoi(argv[i]);
+			if (cm < 1 || cm > 4)
+				error("invalid counting method: %s", argv[i]);
+			opt->counting_method = cm;
+		}
+
 		else if(!strcmp(arg, "-i") ||
 			!strcmp(arg, "--instruction-counts"))
 			opt->instr_counts = 1;
@@ -249,6 +265,10 @@ const char *help_string =
 "                     Load the requested instruction set\n"
 "  -s | --statistics  Print statistics at the end of the execution\n"
 "  -t | --tex         Use in combination of -s to print a Tex array\n"
+"  -cm | --counting_method\n"
+"                     Select the way to count the bits exchanged. It must\n"
+"                     be followed by a number between 1 and 4 indicating\n"
+"                     this method. By default, this number is 4.\n"
 "  -i                 Print the number of use of each instruction\n"
 "  --state            Print the state of the processor at the end of the\n"
 "                     execution.\n"
@@ -554,6 +574,9 @@ int main(int argc, char **argv)
 	{
 		fatal("could not load the instruction set");
 	}
+
+	/* Set the counting method */
+	cpu_set_counting_method(opt.counting_method);
 
 	/* Create a CPU and give it the memory */
 	cpu = cpu_new(mem);
