@@ -1,9 +1,9 @@
 #! /usr/bin/env python3
 
 from random import randrange,random
+from sys import argv
 
-
-density = 1
+density = float(argv[1]) if len(argv)>1 else 1 
 
 m1 = [[randrange(1<<64)*((random()<density)) for i in range(32)]
        for j in range(32)]

@@ -9,9 +9,12 @@ emu/emu
 asm2017/prog/*.bin
 asm2017/prog/*.obj
 asm2017/prog/*.debug
+asm2017/*.huff
+asm2017/*.bytes
 
 # Font converter executable
 asm2017/prog/font-convert
+
 
 # Object and binary files from the subject simu.src
 asm2017/subject/simu.src/*.o
