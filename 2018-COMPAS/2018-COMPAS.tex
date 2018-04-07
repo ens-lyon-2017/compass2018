@@ -26,7 +26,8 @@
 
 \title{Une architecture minimisant les échanges\\ entre processeur et mémoire}
 
-\author{Florent de Dinechin, \\Sébastien Michelland, Maxime Darrin, Antonin Dudermel, Alban Reynaud}
+\author{\hspace{-1.5ex}% tout le monde sur la même ligne
+  Florent de Dinechin, Sébastien Michelland, Maxime Darrin, Antonin Dudermel, Alban Reynaud}
 
 \address{
   % \begin{tabular}{cc}
@@ -52,7 +53,8 @@ Cet article décrit aussi une expérience pédagogique réalisée à l'ENS-Lyon.
 Un premier jeu d'instruction a été défini en TD et son encodage choisi à la main.
 Ceci a permis aux étudiants d'écrire en binôme un assembleur et un simulateur, puis plusieurs milliers de lignes de programmes allant du petit noyau de calcul au jeu vidéo et à l'émulateur.
 Sur les traces de ces programmes, on a pu ensuite calculer un encodage optimal des instructions en fonction de leur fréquence, et les comparer à l'encodage initial.
- Ces expérimentations ont aussi montré les limites de cette première approche, et l'article discute  des solutions pour y remédier.
+Cette étude a aussi  porté sur la quantité de bits transférés entre processeur et mémoire.
+
 \end{abstract}
 
 %=========================================================
@@ -78,8 +80,7 @@ Cet article s'intéresse à l'encodage du jeu d'instruction d'un processeur de v
 \end{figure}
 
 Le jeu d'instruction d'un tel processeur (Instruction Set Architecture ou ISA) reflète l'état de la loi de Moore à l'époque de sa conception.
-Celle-ci se traduit par exemple par un doublement de la quantité de mémoire intégrée sur une puce tous les deux ans.
-Comme il faut bien adresser cette mémoire, le bus mémoire suit, et sa taille ($w_a$ sur la figure) grandit donc d'un bit tous les deux ans.
+La mémoire intégrée sur une puce double tous les deux ans, et le bus mémoire suit: sa taille ($w_a$ sur la figure) grandit     d'un bit tous les deux ans.
 Ceci se traduit à son tour par une croissance de la taille des registres qui, dans un processeur, peuvent adresser la mémoire.
 Toutefois, cette croissance a suivi des puissances de 2: de 8 bits aux temps héroïques à 16 bits dans les années 1970, 32 bits dans les années 1980, et 64 bits dans les années 2000, et sans doute pour encore quelques dizaines d'années.
 
@@ -96,17 +97,16 @@ Mais ces registres sont des vecteurs de données d'au plus 64 bits.
 
 
 
-Une question intéressante, et qui commence à toucher le jeu d'instruction, est  la granularité à laquelle on peut adresser la mémoire.
+Les ISAs définissent aussi  la granularité à laquelle on peut adresser la mémoire.
 L'ancêtre 4004 et le processeur Saturn des calculettes HP adressaient leur mémoire par case de 4 bits: ceci correspondait au besoin du décimal codé en binaire.
 La plupart des processeurs (dont les Intel/AMD de nos PC et les ARM de nos gadgets) adressent leur mémoire par octet pour être efficaces sur le traitement de texte.
 
 % \subsection{Pourquoi pas l'adressabilité au bit près?}
 Ceci nous amène à la première constatation. Dès lors que les adresses font 64 bits, on peut parfaitement décider  que le adresses seront des adresses de bits.
-On perd juste un facteur 8 en quantité de mémoire adressable.
-Ce qui aurait été inacceptable à l'époque des adresses sur 16 bits est actuellement indolore: avec un espace d'adressage sur 64 bits, il reste tout de même $2^{61}\approx 2.10^{18}$ bits, ou 2 exabits, à adresser.
+On perd un facteur 8 en quantité de mémoire adressable, ce qui aurait été inacceptable à l'époque des adresses sur 16 bits, mais est actuellement indolore: avec un espace d'adressage sur 64 bits, il reste tout de même $2^{61}\approx 2.10^{18}$ bits, ou 2 exabits, à adresser.
 
 
-Attention, on parle ici de l'abstraction offerte par le jeu d'instruction, pas de l'interface physique.
+On parle ici de l'abstraction offerte par le jeu d'instruction, pas de l'interface physique.
 Les deux sont déjà différentes dans les processeurs actuels.
 Si l'ISA définit une mémoire adressable par octet, l'accès physique à la mémoire se fait à travers un cache qui, côté processeur, offre l'adressage par octet, mais côté mémoire physique  réalise des accès alignés sur une grande puissance de 2 correspondant à la taille de la ligne de cache.
 %Ceci explique aussi les contraintes d'alignement pour les données de grande taille.
@@ -115,8 +115,9 @@ Si l'ISA définit une mémoire adressable par octet, l'accès physique à la mé
 
 Ce qu'on gagne à avoir une adresse pour chaque bit, c'est que la taille des données et des instructions peut être variable au bit près: on peut espérer n'envoyer que les bits utiles.
 Comme exemple d'application, on peut citer les UNUM, un format de représentation des nombres flottants de taille variable et auto-descriptif (les tailles d'exposant et de mantisse sont encodées dans un en-tête) proposé par  Gustafson en 2015 \cite{2015-02-GUSTAFSON}.
-Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses  motivations reste: 
-d'après Dally, \emph{fetching operands costs more than computing on them}, et l'on parle d'un facteur 1000 \cite{Dally:SC2010}.
+Cette proposition est déjà abandonnée par son auteur \cite{2016-09-TICHY} malgré quelques bonnes idées, mais une de ses  motivations reste: \emph{fetching operands costs more than computing on them} \cite{Dally:SC2010}.
+Il y a un facteur 1000  entre l'énergie qu'il faut pour calculer une opération flottante 64bits et l'énergie qu'il faut pour aller chercher ses opérandes en RAM.
+Cela justifie qu'on cherche à minimiser les échanges avec la RAM.
 
 
 Il y a aussi des applications, comme les réseaux de neurones, qui se contentent très bien de données sur de très petites précision, voire des données binaires \cite{AndriCRB16,AlemdarEtAl2017:TernaryCNN,AmiriEtAl2018:mixedPrecCNN,Preusser:DATE2018:heteroCNN}. 
@@ -125,7 +126,8 @@ Attention, il ne faut pas que l'on ait à envoyer 64 bits d'adresse pour chaque 
 Reprendre la figure \ref{fig:mvn} en fixant juste $w_d=1$ serait contre-productif.
 
 Ce travail essaye d'imaginer une architecture (au sens ISA) dans laquelle on peut tailler instructions et données au bit près, et ne payer que pour les bits effectivement transférés.
-Il a été réalisé dans le cadre de l'enseignement de l'architecture en L3 à l'ENS-Lyon: les développements et les expériences présentées sont l'aboutissement de séances de travaux dirigés et de devoirs à la maison\footnote{Le lecteur trouvera les supports correspondant ici: \url{perso.citi-lab.fr/fdedinec/enseignement/2017/ASR1/}}. 
+Il a été réalisé dans le cadre de l'enseignement de l'architecture en L3 à l'ENS-Lyon, où chaque année les étudiants doivent définir et implémenter une ISA originale sous des contraintes un peu arbitraires.
+Certains détails techniques manquant à cet articles pour faute de place pourront être trouvés dans les supports des travaux dirigés correspondant : \\ \url{perso.citi-lab.fr/fdedinec/enseignement/2017/ASR1/}. 
 
 \iffalse
 \subsection{Pourquoi pas un jeu d'instruction au bit près?}
@@ -150,22 +152,23 @@ Le processeur contrôle le sens de transfert par les fils \texttt{Read} et \text
 Pour ne pas avoir à transmettre une adresse de $n$ bits par bit de donnée, les adresses sont le plus souvent implicites.
 Dans ce but, on a 4 compteurs, répliqués dans le processeur et la mémoire.
 Le pointeur de programme, PC, est l'un de ces compteurs.
-Il s'auto-incrémente, classiquement, au cours de la lecture d'une instruction et pour passer à l'instruction suivante.
+Il s'auto-incrémente, classiquement, au cours de la lecture d'une instruction, et pour passer à l'instruction suivante.
 
-Pour lire une donnée, le processeur sélectionne un des compteurs en positionnant les deux bits  \texttt{Select}.
+Pour lire une donnée, le processeur sélectionne un des 4 compteurs en positionnant les deux bits  \texttt{Select}.
 Puis il lève \texttt{Read}.
 Tant que \texttt{Read} vaut 1, le compteur sélectionné s'incrémente (côté processeur comme côté mémoire) et les bits qu'il pointe sont transférés sur le fil \texttt{D}.
-Lorsque le processeur décide qu'il a lu toute une donnée, il baisse \texttt{Read}.
+Lorsque le processeur a lu toute une donnée, il baisse \texttt{Read}.
 Le mécanisme est similaire en cas d'écriture.
 
 Les instructions de lecture/écriture mémoire ne donnent pas d'adresse, mais précisent un compteur (encodé sur 2 bits) et le nombre de bits mémoire à lire/écrire (parmi 1, 4, 8, 16, 32 et 64 bits, encodé par un code prefix-free sur 2 ou 3 bits).
 Il faut aussi des instructions qui permettent de transférer un registre dans un compteur ou inversement.
 Ces instructions ont un encodage compact (le code op, suivi du registre encodé sur 3 bits et du compteur encodé sur 2).
-Par contre, leur exécution provoque bien plus de transferts de bits: par exemple pour changer un compteur, le processeur lève \texttt{SetCounter}, puis transfère sur \texttt{D} les bits du compteur sélectionné par \texttt{Select}, poids faibles en tête.
-Lorsque le processeur baisse \texttt{SetCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe).
+Par contre, leur exécution provoque bien plus de transferts de bits: par exemple pour changer un compteur, le processeur lève \texttt{RWCounter}, puis transfère sur \texttt{D} les bits du compteur sélectionné par \texttt{Select}, poids faibles en tête.
+Lorsque le processeur baisse \texttt{RWCounter}, la mémoire complète le compteur avec le dernier bit transmis (extension de signe) \footnote{Ce fonctionnement sera raffiné, pour des raisons de performance, en section~\ref{sec:transfertsexec}}.
 Si le compteur était le PC, on a réalisé un saut.
 
-Cette interface ne dépend pas de la taille mémoire, ni de la puissance du processeur (elle est identique pour un processeur 32 ou 64 bits).
+Cette interface est identique pour un processeur 32 ou 64 bits, et ne dépend pas non plus de la taille mémoire.
+
 \begin{figure}[b]
     \begin{center}
   \begin{tikzpicture}
@@ -187,7 +190,7 @@ Cette interface ne dépend pas de la taille mémoire, ni de la puissance du proc
 
     \draw[hwwire,->] (p.10) -- (m.170) node[midway,above]{\texttt{Read}};
     \draw[hwwire,->] (p.355) -- (m.185) node[midway,above]{\texttt{Write}};
-    \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{SetCounter}};
+    \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{RWCounter}};
     \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
     \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
     \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{\texttt{Ck}};
@@ -213,69 +216,33 @@ Si par contre on s'intéresse au nombre de transitions sur les fils (une métriq
 \item Par contre on a une transition d'horloge par bit transmis, au lieu d'une transition d'horloge pour $w_a$ ou $w_d$ bits.
 \end{itemize}
 \fi
-Cette interface n'est certainement pas réaliste, en tout cas pas avec une horloge à haute fréquence dans une technologie moderne.
-Il y a une hypothèse de synchronicité des signaux de contrôle et de donnée qu'on ne trouve pas dans les liens série rapide ou les bus d'interface mémoire). Nous l'utilisons essentiellement comme une règle du jeu pour étudier la question de la taille de l'encodage d'un jeu d'instructions.
+Nous sommes conscients que cette interface n'est  pas réaliste, en tout cas pas avec une horloge à haute fréquence dans une technologie moderne:
+Il y a une hypothèse de synchronicité des signaux de contrôle et de donnée qu'on ne se permet plus dans les liens série rapide ou les bus d'interface mémoire.
+Nous l'utilisons essentiellement comme une règle du jeu pour étudier quantitativement  la question de la taille de l'encodage d'un jeu d'instructions.
 
 %\subsection{un c\oe ur  RISC}
-Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres 32 ou 64 bits.  
+Pour le reste, le processeur embarque un c\oe ur RISC très classique, d'architecture load/store, à 8 registres de 64 bits.  
 Le choix de 8 registres seulement est arbitraire et discutable: il est motivé par des raisons pédagogiques (faire en sorte que les étudiants soient à l'étroit dans les registres  dès l'écriture de programmes simples) et par une raison pratique: encoder le numéro de registre sur aussi peu de bits que possible. Passer le nombre de registres de 8 à 16 ajouterait 1, 2 ou 3 bits à l'encodage de la plupart des opérations.
 
 
-\section{Présentation du jeu d'instruction initial}
+\section{Présentation du jeu d'instruction}
 Le jeu d'instruction décrit dans cette section est l'aboutissement des deux séances de TD dans lesquelles on a essayé de discuter les tenants et les aboutissants de chaque décision.
 Les choix faits ne sont pas toujours ceux qui étaient considérés comme les meilleurs: nous avons aussi privilégié la faisabilité dans le temps limité consacré au module d'ASR1.
 % \subsection{Généralités sur les jeux d'instructions}
 % Les jeux d'instructions les plus compacts à notre connaissance sont les \emph{bytecodes} des machines virtuelles comme Java ou Python, qui émulent une machine à pile.
 % \todo{blabla}
 
-%\subsection{Format général des instructions}
+% \subsection{Format général des instructions}
+La figure \ref{fig:exempleasm} montre un exemple de programme et son encodage.
 Les instructions commencent toutes par un code opération (opcode), suivi des éventuels opérandes.
-Les mnémoniques sont écrits exactement dans le même ordre (voir la figure~\ref{fig:exempleasm} pour un exemple).  
+Les mnémoniques sont écrits exactement dans le même ordre (figure~\ref{fig:exempleasm}).  
 Une fois que le processeur a reçu l'opcode, il sait combien d'opérande il doit recevoir et quel est leur type.
 
 
-Les instructions ALU viennent en version 2 et 3 opérandes, la destination venant toujours en premier.
-Par exemple, \\
-  \begin{tabular}{lcl}
- \texttt{add2 r0 r1}&& réalise $r_0 \leftarrow r_0+r_1$. \\
- \texttt{add3 r0 r1 r2}&& réalise $r_0 \leftarrow r_1+r_2$.
-  \end{tabular}
-  
-  Dans les programmes écrits à la main, il faut constater qu'on a utilisé surtout les versions à 2 opérandes.
-  Ceci est similaire à l'évolution du jeu d'instruction ARM vers le mode Thumb2 qui permet d'encoder sur 16 bits des instructions à deux opérandes. 
-  
- L'opcode est différent pour les opérations dont les deux opérandes  sont des registres (par exemple \texttt{add2}), et les opérations portant sur un registre et une constante (par exemple \texttt{add2i}).
-
-Il y a des opcodes de différentes tailles (mais sans préfixe commun, le décodage n'est jamais ambigu)  et les opérandes peuvent également être de différentes tailles.
-En particulier, les constantes commencent par un préfixe qui décrit le nombre de bits sur lequel est encodé la constante: voir la table~\ref{tab:constantes} en annexe.
-Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bits, alors que les grandes constantes son également encodables.
-Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
-
-On a un encodage des constantes différent pour chaque classe d'instruction (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
-
-
-\begin{table}[b]
-  \centering
-  \caption{Encodage \emph{prefix-free} des différentes constantes  \label{tab:constantes}}
-  \begin{tabular}{|l||l||l|}
-    \hline
-    adresses et déplacements & constantes ALU & constantes de shift                   \\
-    \hline
-    0 + 8 bits              & 0 + 1 bit      & 0 + 6 bits  (constante entre 0 et 63) \\
-    \hline         
-    10 + 16 bits            & 10 + 8 bits    & 1  (constante 1)                      \\
-    \hline                  
-    110 + 32 bits           & 110 + 32 bits  &                                       \\
-    \hline                  
-    111 + 64 bits           & 111 + 64 bits  &                                       \\
-    \hline
-  \end{tabular}
-\end{table}
-
-\begin{figure}
+\begin{figure}[b] 
   \centering {\small \tt
   \begin{tabular}{llll}
-    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage initial} & \textrm{encodage Huffman} \\
+    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage initial} & \textrm{encodage Huffman de l'opcode} \\
     \hline
     
          & leti	r0 17        & 0111 000 1000010001 & 100 000 1000010001 \\
@@ -302,61 +269,77 @@ boucle:	                                 ; ceci est une étiquette (label)
 \fi
 \end{figure}
 
-\subsection{Transfert des bits à l'exécution}
-
-Les premières mesures faites sur ce processeur montraient qu'un bon tiers des bits échangés étaient dus à la synchronisation des compteurs entre la mémoire et le processeur. Typiquement, le \texttt{push} coûtait 128 bits à chaque utilisation, ce qui était coûteux par exemple dans la multiplication de matrices creuses. On a donc imaginé posséder un mode d'adressage avec pré-décrément, mais malgré cela, les coûts restaient très élevés. Le problème est qu'on envoie souvent des bits inutiles : lorsqu'on déplace un pointeur (par exemple le pc lors d'un saut), on le fait souvent à proximité de son ancienne valeur. Ainsi seuls les bits de poids faible changent entre l'ancienne et la nouvelle valeur. Or, on possède une copie des compteurs dans le processeur. On peut donc n'envoyer que ces bits de poids faible. Cette amélioration nous a permis de diviser par 10 la quantité de bits échangés pour synchroniser les compteurs, et ainsi rendre majoritaires les bits de code. La table \ref{tab:costs} résume le coût des opérations en fonction des échanges
-
-%
-\iffalse
-Les instructions de branchement sont relativement classiques.
-\subsection{Les instructions de branchement }
-\label{sec:jumpcallret}
-
-Soit $a$ l'adresse du premier bit suivant l'instruction \texttt{jump} ou \texttt{call} (i.e. la valeur du PC lorsqu'il a fini de lire l'instruction et ses opérandes).
-Soit $d$ la valeur de déplacement (encodée dans une constante de type \textit{addr}, et signée).
-
-L'instruction \texttt{jump} réalise $\mathtt{pc}\leftarrow a + c$.
-L'instruction \texttt{jumpif} aussi, mais seulement si la condition est vraie.
-
-La condition  est encodée sur trois bits  selon la table~\ref{tab:conditions} (ARM utilise 4 bits).
-
-L'instruction \texttt{call} copie $\texttt{a}$ dans $r_{7}$, puis réalise $\mathtt{pc} \leftarrow \texttt{d}$
-(\emph{addr} est toujours signé).
-
-L'instruction \texttt{return} copie \texttt{r7} dans \texttt{pc}.
-
-
-\subsection{Les instructions d'accès mémoire}
-\label{sec:mem}
-
-
-
-On a 4 compteurs d'adresses, chacun  répliqué dans le processeur et dans la mémoire (Table~\ref{tab:counters}).
-
-
-Les instructions \texttt{readze}, \texttt{readse} et \texttt{write} lisent ou écrivent le nombre spécifié de bits tout en incrémentant les compteurs correspondant.
-
-On peut émuler une instruction de lecture/écriture mémoire d'un processeur classique en deux instructions: un \texttt{setctr} puis un \texttt{readze} ou \texttt{readse} ou \texttt{write}.
-
-Les instructions \texttt{push} et \texttt{pop} implémentent une pile descendante en mémoire: 
-\begin{itemize}
-\item \texttt{push} \emph{size} \emph{reg} réalise: \\
-   \texttt{setctr} \textit{sp} (\textit{sp} - \textit{size})\\ \texttt{write}  \textit{sp} \textit{size} \textit{reg} \\ \texttt{setctr} \textit{sp} (\textit{sp} - \textit{size})
-\item \texttt{pop} \emph{size} \emph{reg} est un raccourci offert par l'assembleur pour \\\texttt{readze} \textit{sp} \emph{size} \emph{reg}\\
+La liste complète des instructions est donnée dans la table \ref{tab:opcodes} en annexe.
+Les instructions ALU viennent en version 2 et 3 opérandes, la destination venant toujours en premier.
+Par exemple, \\
+  \begin{tabular}{lcl}
+ \texttt{add2 r0 r1}&& réalise $r_0 \leftarrow r_0+r_1$. \\
+ \texttt{add3 r0 r1 r2}&& réalise $r_0 \leftarrow r_1+r_2$.
+  \end{tabular}
   
-\end{itemize}
+  Dans les programmes écrits à la main, il faut constater qu'on a utilisé surtout les versions à 2 opérandes.
+  Ceci est similaire à l'évolution du jeu d'instruction ARM vers le mode Thumb2 qui permet d'encoder sur 16 bits des instructions à deux opérandes, et sur 32 bits des instructions plus puissantes à 3 ou 4 opérandes.  
+  
+ L'opcode est différent pour les opérations dont les deux opérandes  sont des registres (par exemple \texttt{add2}), et les opérations portant sur un registre et une constante (par exemple \texttt{add2i}).
 
-\fi
+ Il y a des opcodes de différentes tailles (un opérande n'est jamais le préfixe d'un autre, ainsi le décodage n'est jamais ambigu).
 
-\section{Premières expériences}
+ Les opérandes peuvent également être de différentes tailles.
+En particulier, les constantes commencent par un préfixe qui décrit le nombre de bits sur lequel est encodée  la constante (table~\ref{tab:constantes}).
+Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bits, alors que les grandes constantes son également encodables.
+Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
+
+On a un encodage des constantes différent pour chaque classe d'instruction (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
+
+Les instructions de branchement sont relativement classiques: saut, saut conditionnel sur drapeau, saut à une sous-routine (l'adresse de retour étant stockée dans le registre \texttt{r7}).
+
+%Les instructions \texttt{readze}, \texttt{readse} et \texttt{write} lisent ou écrivent le nombre spécifié de bits tout en incrémentant les compteurs correspondant.
+
+\begin{table}[t]
+  \centering
+  \caption{Encodage \emph{prefix-free} des différentes constantes  \label{tab:constantes}}
+  \begin{tabular}{|l||l||l||ll|}
+    \hline
+    \emph{addr}&  \emph{const} & \emph{shiftval} & \emph{size}& \\
+    adresses, déplacements & constantes ALU & constantes de shift & tailles     & \\
+    \hline
+    0 + 8 bits               & 0 + 1 bit      & 0 + 6 bits          & 00 : 1 bit &  01: 4 bits  \\ 
+%    \hline         
+    10 + 16 bits             & 10 + 8 bits    & 1  (constante 1)    & 100: 8 bits& 101: 16 bits \\
+%    \hline                  
+    110 + 32 bits            & 110 + 32 bits  &                     & 110: 32 bits &  \\
+%    \hline                  
+    111 + 64 bits            & 111 + 64 bits  &                     & 111: 64 bits &\\
+    \hline
+  \end{tabular}
+\end{table}
+
+\section{Transfert des bits à l'exécution \label{sec:transfertsexec}}
+
+Au dela de l'encodage des instructions, nous avons aussi cherché à minimiser les transferts de bits à l'exécution.
+Par exemple, considérons la manipulation d'une pile descendante en mémoire.
+Si le \texttt{pop} marche tout seul avec un pointeur de pile autoincrémenté, le \texttt{push}, lui, doit écrire aux adresses \emph{précédant} \texttt{SP}.
+Ceci peut se faire par l'équivalent d'une instruction \texttt{setctr} pour descendre \texttt{SP}, d'une écriture autoincrémentée, et d'un second \texttt{setctr} qui redescend \texttt{SP}.
+Un \texttt{push} de 64 bits doit  ainsi transférer deux adresses en plus des 64 bits.
+Nous avons résolu ceci en ajoutant une écriture prédécrémentée, déclenchée lorsque \texttt{Read} et \texttt{Write} sont tous deux à 1.
+
+Un autre problème qui est apparu est que le plus souvent, on veut  mettre à jour un compteur avec une valeur proche de celle qu'il a déjà, par exemple le \texttt{PC} lors d'un saut relatif, ou un incrément de pointeur dans un tableau.
+Il est naturel de vouloir envoyer seulement la différence entre l'ancienne et la nouvelle valeur.
+Lorsque \texttt{RWCounter} vaut 1, ce qui passe sur \texttt{D} est donc toujours une différence, poids faible en premier.
+Lorsque \texttt{RWCounter} est baissé, la valeur envoyée subit une extension de signe sur 64 bits, et cette valeur est ajoutée au compteur.
+Dans les tests que nous présentons ci-dessous, cette technique a permis de gagner un facteur dépassant 10  sur le nombre total de bits transmis pour mettre a jour les compteurs.
+
+
+
+
+\section{Expérimentations}
 Nous n'avons pas encore de compilateur pour cette architecture.
 Les expériences, dont quelques résultats sont rapportés dans la table~\ref{tab:bitcounts}, portent sur une petite suite de benchmarks écrits en assembleur à la main:
 
 \textbf{Multiplication entière} Le choix d'une ISA sans instruction de multiplication ni division est essentiellement pédagogique, pour faire manipuler l'arithmétique de bas niveau.
-les étudiants ont donc dû écrire le programme de la figure~\ref{fig:exempleasm}, et même l'assembler à la main dans un premier temps.
+les étudiants ont donc du écrire le programme de la figure~\ref{fig:exempleasm}, et même l'assembler à la main dans un premier temps.
 Il n'y a pas d'accès mémoire dans ce benchmark, hors du programme lui-même.
-Le c\oe ur de boucle est encodé en 69 bits.
-% Pour comparaison, un programme similaire compilé pour le processeur RISC 16 bits MSP430, 10 instructions aussi, consomme  24 octets, soit 192 bits, dont 96 pour le c\oe ur de boucle.
+Pour comparaison, la troisième ligne de la table décrit la taille et le nombre de bits échangés à l'exécution par un programme très similaire dans l'assembleur du le processeur RISC 16 bits MSP430 qui a un jeu d'instruction comparable: notre proposition est plus compacte et transmet moins de bits à l'exécution (essentiellement par l'économie du transfert des adresses).
 % A l'exécution, 
 % Notre encodage est donc clairement plus compact, pour un processeur 64 bits.
 % voir le répertoire MSP430
@@ -368,7 +351,8 @@ Le c\oe ur de boucle est encodé en 69 bits.
 C'est un produit de matrices 32x32 d'entiers 64 bits aléatoires.
 Ce programme utilise la multiplication entière précédente, mais les matrices sont lues et écrites en mémoire.
 On présente deux simulations: la première avec des matrices pleines, et la seconde avec des matrice creuse (en moyenne 90\% de 0).
-Les multiplications par 0 terminant instantanément, mais étant tout de même stocké en mémoire comme 64 bits, cette seconde version provoque un rapport bits de données / bits de code plus élevé.
+Les multiplications par 0 terminant instantanément, mais chaque 0 étant tout de même stocké en mémoire comme 64 bits% (en attendant les UNUM...)
+, cette seconde version provoque un rapport bits de données / bits de code plus élevé.
 
 \textbf{Chip8}
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
@@ -380,10 +364,10 @@ Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction.
 D'autres compteurs comptent les bits échangés sur les fils à l'exécution.
 Les résultats correspondants sont donnés dans la première  ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}.
 
-La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufman optimal \emph{pour ce benchmark}.
+La seconde expérience (dont les résultats sont donnés sur la seconde ligne pour chaque benchmark dans la table~\ref{tab:bitcounts}) consiste à changer l'encodage initial des opcodes pour un encodage de Hufman calculé sur la trace d'exécution de la première expérience, donc  optimal \emph{pour ce benchmark}.
 %Cet encodage utilise les statistiques de la table~\ref{tab:opcounts}.
-L'intérêt de cette seconde expérience est de donner une borne inférieure: l'idée de changer l'encodage des instructions en fonction du programme va au-delà de la présente étude.
-Du reste, on voit que l'encodage des opcodes peut être amélioré, mais que les gains à espérer restent faibles.
+L'intérêt de cette seconde expérience est de donner une borne inférieure: nos trois benchmarks réclament un encodage optimal assez différents, et l'idée de changer l'encodage des instructions en fonction du programme va au-delà de la présente étude.
+Du reste, si l'on voit que l'encodage des opcodes peut encore être amélioré,  les gains à espérer restent faibles.
 
 
 \iffalse
@@ -413,7 +397,7 @@ idem mais avec python3 ./matmulstat/makematrix.py 0.1 pour une matrice creuse
     \hline
 
     
-    benchmark      & instr     & bits       & bpi         & prog    & data R  & data W  & counters & branch  & total      \\
+    benchmark      & instr     & bits       & BPI         & prog    & data R  & data W  & counters & branch  & total      \\
     \hline
     \hline
     binmult~~~I    & 10        & 125        & 12.5        & 89.4\%  &         &         &          & 10,6\%  & 415        \\
@@ -422,11 +406,11 @@ idem mais avec python3 ./matmulstat/makematrix.py 0.1 pour une matrice creuse
     \hline
     \hline
     matmul~~~I     & 112       & 1632       & 14.6        & 80.4 \% & 5.0 \%  & 2.6 \%  & 0.3 \%   & 11.8 \% & 1.72e8     \\ 
-     (dense)~  H           & 112       & 1817       & 16.2        & 75.4 \% & 5.6 \%  & 2.9 \%  & 0.3 \%   & 15.9 \% & 154e8      \\ 
+     (dense)~  H   & 112       & 1817       & 16.2        & 75.4 \% & 5.6 \%  & 2.9 \%  & 0.3 \%   & 15.9 \% & 1.54e8     \\ 
     \hline
-    matmul~~~I    & 112       & 1632       & 14.6        & 55.3 \% & 23.3 \% & 12.1 \% & 1.2 \%   & 8.0 \%  & 3.68e7     \\ 
+    matmul~~~I     & 112       & 1632       & 14.6        & 55.3 \% & 23.3 \% & 12.1 \% & 1.2 \%   & 8.0 \%  & 3.68e7     \\ 
 
-    (sparse)~ H & 112 & 1613 & 14.4  & 52.1 \% & 25.2 \% & 13.1 \% & 1.3 \% & 8.3 \% & 341e7\\ 
+    (sparse)~ H & 112 & 1613 & 14.4  & 52.1 \% & 25.2 \% & 13.1 \% & 1.3 \% & 8.3 \% & 3.41e7\\ 
 
     \hline
     \hline
@@ -434,7 +418,7 @@ idem mais avec python3 ./matmulstat/makematrix.py 0.1 pour une matrice creuse
      H    & 768 & 13699 & 17.8 & 63.1 \% & 10.7 \% & 9.9 \% & 7.7 \% & 8.6 \% & 1.063e8\\ 
     \hline
   \end{tabular}
-  \caption{Nombre de bits échangés par benchmark. Encodage des opcodes: I initial, H Huffman. Les colonne à partir de \emph{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
+  \caption{Nombre de bits échangés par benchmark. BPI: bits par instruction (moyen). Encodage des opcodes: I initial, H Huffman. Les colonne à partir de \emph{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
   \label{tab:bitcounts}
 \end{table}
 
@@ -482,29 +466,31 @@ Nous disposons d'un assembleur et d'un simulateur dans lesquels l'encodage des o
 
 Cette approche s'accomode fort bien d'instructions très disparates en termes d'opérandes.
 Ainsi, ajouter une instruction de multiplication-accumulation à 4 arguments ne nous posera pas de problème particulier -- étendre notre ISA avec de telles instructions fait partie des pistes à explorer prochainement.
-Ceci fera grossir nos opcodes: pour un jeu d'instruction vraiment complet, nous arriverons peut-être à la conclusion que le \emph{bytecode}, l'adressabilité à l'octet, est un meilleur compromis... c'est celui de l'ISA dominante, où l'instruction \texttt{ret} s'encode toujours en 8 bits, mais plus pour des raisons historiques qu'à la suite d'une savante étude.
 
-Nous nous somme concentrés sur l'encodage des instructions.
-Du reste, dans nos expériences, le code représente toujours l'essentiel des bits échangés.
-Nous espérons que ce ne sera plus vrai pour un produit de matrices de données 64 bits.
+Ceci fera grossir nos opcodes: pour un jeu d'instruction vraiment complet (incluant virgule flottante, interruptions, etc), nous arriverons peut-être à la conclusion que le \emph{bytecode}, l'adressabilité à l'octet, est décidément le bon compromis.
+C'est celui de l'ISA dominante, où l'instruction \texttt{ret} s'encode toujours en 8 bits, et aussi des machines virtuelles comme Java ou Python, même si (à notre connaissance) ce choix découle plus de  raisons historiques que de savantes études.
 
-Actuellement, l'arithmétique sur les pointeurs est extrêmement coûteuse, tant en bits d'instructions qu'en bits à l'exécution.
-Nous avons commencé à étudier la possibilité de lectures/écritures avec prédécrément pour faciliter le \texttt{push} -- le \texttt{pop}, dans une pile descendante en mémoire, s'accomode très bien de nos pointeurs autoincrémentés.
-Il faut aussi étudier un mécanisme simple  d'accès indexé à la pile (SP+constante) pour permettre la compilation efficace de langages de haut niveau (enregistrements d'activation des procédures).
-Dans ce cas, on a envie de déléguer à la mémoire l'addition de SP et de la constante pour ne pas les faire transiter sur D dans les deux sens.
-Il en va de même pour un saut relatif (addition sur PC d'une constante qui est présente en mémoire dans le code).
-Le  \texttt{call addr} est encore pire, puisqu'actuellement, \texttt{addr} passe sur \texttt{D} dans un sens (comme instruction) puis dans l'autre (pour être écrit dans le PC).
+Nous nous somme concentrés sur l'encodage des instructions, et avec raison:  dans nos expériences, le code représente toujours l'essentiel des bits échangés.
 
+Nous n'avons vraiment fait varier que l'opcode: l'encodage des registres reste naïf, l'encodage des constantes décrit par la table \ref{tab:constantes} est toujours celui décidé en TD à l'intuition.
+Pour mener une étude plus poussée, il faut une base de \emph{benchmarks} plus étendue, donc un compilateur. Ce sera l'objet d'un projet l'année prochaine.
+
+Pour cela, il faudra des instructions d'accès indexé à la pile (SP+constante) pour permettre d'accéder efficacement à l'enregistrements d'activation d'une procédure.
+Dans ce cas,  on a envie de déléguer à la mémoire l'addition de SP et de la constante, puisqu'elle est  présente en mémoire dans le code: pourquoi la faire transiter sur D dans les deux sens?
+Il en va du reste de même pour un saut relatif (addition sur PC d'une constante qui est présente en mémoire dans le code).
 
 La question se pose aussi de la pertinence de ce travail pour construire un ``vrai'' processeur.
 Nous sommes conscients que notre  lien série maître/esclave entre processeur et mémoire n'est plus pertinent depuis plusieurs dizaines d'années.
 De ce point de vue, ce travail reste théorique.
-Cela dit il serait possible d'abriter notre ISA derrière un cache classique, en espérant que la compacité du jeu d'instruction permet d'économiser sur celui-ci.
-Il faudrait pour cela montrer que cette économie n'est pas anéantie par le surcoût du décodage de nos encodages \emph{prefix-free}. 
+Lui trouvera-t-on une niche applicative qui justifierait de se lancer dans la construction de ce processeur?  
+Serait possible d'abriter notre ISA derrière un cache classique, en espérant que la compacité du jeu d'instruction permet d'économiser sur celui-ci?
+Il faudrait pour cela montrer que cette économie n'est pas anéantie par le surcoût du décodage.
+Peut-être que la réponse à cette question passe par une implémentation du processeur.
 
 
 \bibliography{biblio.bib}
 
+  \iffalse
 
 \begin{table}[!h]
   \caption{Coûts des opérations en bits de synchronisation des compteurs}
@@ -512,7 +498,6 @@ Il faudrait pour cela montrer que cette économie n'est pas anéantie par le sur
 
 
   
-  \iffalse
   On propose une première version naïve du coût de chaque opération, pour une architecture 64 bits.
   
   On distinguera trois types de bits échangées :
@@ -553,7 +538,6 @@ La taille de l'opcode d'une instruction étant variable, il faut à chaque fois 
   \end{tabular}
   \end{center}
 
-  \fi
 Ce tableau résume le nombre de bits échangés pour synchroniser les compteurs entre la mémoire et le processeur par opération, en fonction de la manière dont sont synchronisés les compteurs. La première ligne représente une version où les compteurs ne sont pas dédoublés dans le processeur.
   \begin{center}
     \begin{tabular}{|l|c|c|c|c|}
@@ -596,6 +580,7 @@ Ce tableau résume le nombre de bits échangés pour synchroniser les compteurs 
   \end{center}
 
 \end{table}
+  \fi
 
 \iffalse
 
@@ -624,7 +609,7 @@ $
 
 \appendix
 \begin{table}[!h]
-  \caption{Liste des instructions.}
+  \caption{Annexe: Liste des instructions avec leur encodage initial.}
   \label{tab:opcodes}
   Le choix des opcodes est arbitraire.
   Les opérandes d'une instruction suivent l'opcode:
@@ -659,8 +644,8 @@ $
     \hline
     1000    & \texttt{shift}  & \textit{dir} \reg\ \shiftval\ & logical shift                                        &      & zcn         \\
     \hline
-    10010   & \texttt{readze} & \ctr\ \size\ \reg\            & read \size\ memory bits (zero-extended) to \reg\     &      &             \\
-    10011   & \texttt{readse} & \ctr\ \size\ \reg\            & read \size\ memory bits (sign-extended) to \reg\     &      &             \\
+    10010   & \texttt{readze} & \ctr\ \size\ \reg\            & read \size\ mem. bits (zero-extended) to \reg\     &      &             \\
+    10011   & \texttt{readse} & \ctr\ \size\ \reg\            & read \size\ mem. bits (sign-extended) to \reg\     &      &             \\
     \hline
     1010    & \texttt{jump}   & \addr\                        & relative jump                                        &      &             \\
     \hline
@@ -680,7 +665,7 @@ $
     \hline
     110110  & \texttt{setctr} & \ctr\ \reg\                   & store \reg\ to a counter                             &      &             \\
     \hline
-    110111  & \texttt{getctr} & \ctr\ \reg\                   & copy the current value of a counter to \reg\         &      &             \\
+    110111  & \texttt{getctr} & \ctr\ \reg\                   & copy the current value of counter to \reg\         &      &             \\
     \hline
     1110000 & \texttt{push}   & \size\ \reg\                  & push value of register on stack                      &      &             \\
     \hline
