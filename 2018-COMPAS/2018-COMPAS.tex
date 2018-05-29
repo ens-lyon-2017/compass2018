@@ -284,11 +284,11 @@ Par exemple, \\
 
  Il y a des opcodes de différentes tailles (un opérande n'est jamais le préfixe d'un autre, ainsi le décodage n'est jamais ambigu).
 
- Les opérandes peuvent également être de différentes tailles.
-En particulier, les constantes commencent par un préfixe qui décrit le nombre de bits sur lequel est encodée  la constante (table~\ref{tab:constantes}).
+Les opérandes peuvent également être de différentes tailles.
+ En particulier, les constantes commencent par un préfixe qui décrit le nombre de bits sur lequel est encodée  la constante (table~\ref{tab:constantes}).
+Il s'agit d'un genre ad-hoc de Gamma-coding \cite{1975-Elias-Gammacoding}. 
 Ainsi les petites constantes courantes comme 0 et 1 sont encodées sur peu de bits, alors que les grandes constantes son également encodables.
 Pour les sauts relatifs, on paiera moins cher les sauts proches (jusqu'à +/- 128 bits, soit une dizaine d'instructions) que les sauts plus distants, qui sont par définition pris moins fréquemment.
-
 On a un encodage des constantes différent pour chaque classe d'instruction (table~\ref{tab:constantes}), puisque les besoins ne sont pas les même.
 
 Les instructions de branchement sont relativement classiques: saut, saut conditionnel sur drapeau, saut à une sous-routine (l'adresse de retour étant stockée dans le registre \texttt{r7}).
@@ -347,7 +347,7 @@ Pour comparaison, la troisième ligne de la table décrit la taille et le nombre
 
 
 
-\textbf{Produit de matrice}
+\textbf{Produit de matrices}
 C'est un produit de matrices 32x32 d'entiers 64 bits aléatoires.
 Ce programme utilise la multiplication entière précédente, mais les matrices sont lues et écrites en mémoire.
 On présente deux simulations: la première avec des matrices pleines, et la seconde avec des matrice creuse (en moyenne 90\% de 0).
@@ -358,6 +358,7 @@ Les multiplications par 0 terminant instantanément, mais chaque 0 étant tout d
 Un binôme a écrit un émulateur CHIP8 \cite{Chip8:1978} pour notre système.
 Ce benchmark fait tourner le jeu BRIX pendant exactement une minute par partie.
 Ce benchmark est très orienté mémoire puisqu'il interagit beaucoup avec l'écran.
+\medskip
 
 La première expérience consiste à utiliser l'encodage initial.
 Des compteurs, dans le simulateur, mesurent l'utilisation de chaque instruction.%. (rapportée dans la table~\ref{tab:opcounts}. \todo{Il faut choisir quelle instruction on rapporte}
