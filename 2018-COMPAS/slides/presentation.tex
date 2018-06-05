@@ -1,7 +1,7 @@
  % !TEX TS-program = pdflatex
 % !TEX encoding = UTF-8 Unicode
 
-\documentclass[slidetop,11pt]{beamer}
+\documentclass[slidetop,11pt,table]{beamer}
 
 %\usepackage[french]{babel}
 \usepackage[T1]{fontenc}
@@ -59,7 +59,7 @@
   \end{figure}
 \end{frame}
 
-\begin{frame}{Un programme}
+\begin{frame}{Un exemple}{multiplication entière}
   \begin{figure}
     {\tiny \tt \progex}
     \caption{exemple de programme assembleur}
@@ -74,14 +74,42 @@
 \end{table}
 \end{frame}
 
-\begin{frame}{Benchmark}
-  \begin{table}
-    {\tiny
-  \benchmark}
-  \caption{Nombre de bits échangés par benchmark. BPI: bits par instruction (moyen). Encodage des opcodes: I initial, H Huffman. Les colonne à partir de \emph{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
-  \label{tab:bitcounts}
-\end{table}
+\begin{frame}{Benchmark}{Taille du code}
+  \begin{figure}
+    \centering
+    \begin{tikzpicture}[xscale = 0.3, yscale = 0.5]
+      \draw(0,0)grid[xstep=2,ystep=9] (20,9);
+      \draw[line width=4mm, color=magenta, yshift=-1mm] plot[xcomb] file {huffbpi.txt};
+      \draw[line width=4mm, color=cyan, yshift=1mm] plot[xcomb] file {initbpi.txt};
+      \foreach \x in {4,8,12,16} \draw(\x,9)node[above]{\x};
+      \draw (20,9)node[above]{BPI(\%)}; 
+      \foreach \n/\y in {binmult/1.5,matmul(sparse)/3.5,matmul(dense)/5.5,chip8/7.5} 
+      \draw (0,\y) node [left] {\n};
+      \draw (18,1) node[fill=cyan] {\tiny Initial};
+      \draw (18,2) node[fill=magenta]{\tiny Huffman};
+    \end{tikzpicture}
+    \caption{nombre de bits par instruction}
+  \end{figure}
+\end{frame}
 
+\begin{frame}{Benchmark}{Bits échangés}
+  \begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[xscale=0.05,yscale=0.5]
+      \draw(0,0)grid[xstep=10,ystep=9] (100,9);
+      \draw[line width=4mm, color=magenta, yshift=-1mm] plot[xcomb] file {huffprgm.txt};
+      \draw[line width=4mm, color=cyan, yshift=1mm] plot[xcomb] file {initprgm.txt};
+      \foreach \x in {0,10,...,90} \draw(\x,9)node[above]{\small\x};
+      \draw (100,9)node[above]{\small \%}; 
+      \foreach \n/\y in {binmult/1.5,matmul(sparse)/3.5,matmul(dense)/5.5,chip8/7.5} 
+      \draw (0,\y) node [left] {\n};
+      \draw (85,7) node[fill=cyan,below] {\tiny Initial};
+      \draw (85,7) node[fill=magenta,above]{\tiny Huffman};
+      
+    \end{tikzpicture}
+    \caption{bits de programme échangés}
+    \label{fig:prgmper}
+  \end{figure}
 \end{frame}
 
 % \begin{frame}

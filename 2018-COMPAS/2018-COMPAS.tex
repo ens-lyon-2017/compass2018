@@ -309,7 +309,7 @@ Du reste, si l'on voit que l'encodage des opcodes peut encore être amélioré, 
 python3 ./matmulstat/makematrix.py
 ./asm.py -v -b prog/matmul.s
 ./emu/emu -s -t prog/matmul.bin --load 65536:mat32x32.bytes
-./emu/emu -i prog/matmul.bin --load 65536:mat32x32.bytes | ./huffmann.py > matmul.huff
+./emu/emu -i prog/matmul.bin --load 65536:mat32x32.bytes | ./huffman.py > matmul.huff
 ./asm.py --loadhuffman matmul.huff -v -b prog/matmul.s -o prog/matmul.huff.bin
 ./emu/emu -s -t -lh matmul.huff prog/matmul.huff.bin --load 65536:mat32x32.bytes
 
