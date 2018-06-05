@@ -1,0 +1,93 @@
+ % !TEX TS-program = pdflatex
+% !TEX encoding = UTF-8 Unicode
+
+\documentclass[slidetop,11pt]{beamer}
+
+%\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+
+%\usepackage{amsmath,amsfonts,amssymb,ulem,epigraph}
+%\usepackage[upright]{fourier}
+\usepackage{shadethm}
+
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subfig}
+
+\usepackage{array}
+\usepackage{slashbox}
+
+%\usetheme{Warsaw}
+\usecolortheme{beaver}
+
+\input{../figtab}
+
+\newcommand{\dfct}{\mathfrak{d}}
+\newcommand{\coop}{\mathfrak{c}}
+\newcommand{\switch}[2]{\only<1>{#1}\only<2>{#2}}
+\title{Une architecture minimisant les échanges\\ entre processeur et mémoire}
+
+\date{}
+
+\begin{document}
+
+\newshadetheorem{defin}{Definition}
+\newshadetheorem{theo}{Theorem}
+\newshadetheorem{prop}{Property}
+\frame{\titlepage}
+
+%\frame{\tableofcontents}
+
+\begin{frame}{Architecture de Von Neumann}
+  \begin{figure}[b]
+    \begin{center}
+      \figVonNeumann
+    \end{center}
+    \caption{Une machine de von Neumann.}
+    \label{fig:mvn} \index{von Neumann}\index{machine de von Neumann}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Le processeur}
+  \begin{figure}[b]
+    \begin{center}
+      \proco
+    \end{center}
+    \caption{L'interface processeur-mémoire proposée}
+    \label{fig:overview}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Un programme}
+  \begin{figure}
+    {\tiny \tt \progex}
+    \caption{exemple de programme assembleur}
+  \end{figure}
+\end{frame}
+
+\begin{frame}{Constantes}
+  \begin{table}[t]
+  \centering
+  \caption{Encodage \emph{prefix-free} des différentes constantes  \label{tab:constantes}}
+  {\tiny \prefree}
+\end{table}
+\end{frame}
+
+\begin{frame}{Benchmark}
+  \begin{table}
+    {\tiny
+  \benchmark}
+  \caption{Nombre de bits échangés par benchmark. BPI: bits par instruction (moyen). Encodage des opcodes: I initial, H Huffman. Les colonne à partir de \emph{data R} comptent  les bits qui passent sur \texttt{D} à l'exécution des instructions de lecture, d'écriture, d'accès aux compteurs, et de sauts/call  respectivement. }
+  \label{tab:bitcounts}
+\end{table}
+
+\end{frame}
+
+% \begin{frame}
+%   \frametitle{Bibliographie}
+%   \bibliographystyle{plain}
+%   \bibliography{../biblio}
+% \end{frame}
+
+\end{document}

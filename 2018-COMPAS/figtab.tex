@@ -1,0 +1,117 @@
+% figures for both slides and article (Makefile coming soon ?)
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\tikzset{
+  hwblock/.style={draw, rectangle, rounded corners=.3, very thick, fill=black!5, font=\sf, minimum height=5ex},
+  hwbus/.style={very thick,>=stealth},
+  hwwire/.style={thick,>=stealth},
+  hwword/.style={draw, rectangle, minimum height=3ex},
+  bitwidth/.style={font=\scriptsize,midway,right}
+}
+
+\newcommand{\figVonNeumann}{
+  \begin{tikzpicture}
+    \node[hwblock, minimum width=13ex,minimum height=13ex] (p) at (0,0)  {Processeur} ;
+    \node[hwblock, minimum width=13ex,minimum height=13ex] (m) at (30ex,0)  {Mémoire} ;
+    \draw[hwbus,->] (p.25) -- (m.155) node[midway,above=1ex]{adresse} node[midway]{/} node[midway, below right]{$w_a$};
+    \draw[hwbus,<->] (p.335) -- (m.205) node[midway,below]{données} node[midway]{/} node[midway, above left]{$w_d$};
+  \end{tikzpicture}
+}
+
+\newcommand{\proco}{
+  \begin{tikzpicture}
+    \node[hwblock, minimum width=25ex,minimum height=25ex] (p) at (-10ex,0)  {~~~Processor} ;
+%    \draw  (p) ++(0,-10ex)  node {} ;
+    \node[hwblock, minimum width=25ex,minimum height=25ex, align=center] (m) at (30ex,0)  {Serial\\ Memory} ;
+    
+    \draw (p.north west)  ++(4ex,-3ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{PC} ;
+    \draw (p.north west)  ++(4ex,-7ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{SP} ;
+    \draw (p.north west)  ++(4ex,-11ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A0} ;
+    \draw (p.north west)  ++(4ex,-15ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A1} ;
+    
+    \draw (m.north east)  ++(-4ex,-3ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{PC} ;
+    \draw (m.north east)  ++(-4ex,-7ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{SP} ;
+    \draw (m.north east)  ++(-4ex,-11ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A0} ;
+    \draw (m.north east)  ++(-4ex,-15ex)  node[hwblock,minimum height=3ex,minimum width=5ex]{A1} ;
+
+    \draw[hwwire,<->] (p.35) -- (m.145) node[midway,above]{\texttt{D}};
+
+    \draw[hwwire,->] (p.10) -- (m.170) node[midway,above]{\texttt{Read}};
+    \draw[hwwire,->] (p.355) -- (m.185) node[midway,above]{\texttt{Write}};
+    \draw[hwwire,->] (p.340) -- (m.200) node[midway,above]{\texttt{RWCounter}};
+    \draw[hwwire,->] (p.322) -- (m.218) node[midway,above]{\texttt{Select}};
+    \draw[hwwire,->] (p.320) -- (m.220) node[midway,above]{};
+    \draw[hwwire,<-] (m.south) -- ++(0,-4ex) -- ++(-50ex,0) node[left]{\texttt{Ck}};
+    \draw[hwwire,<-] (p.south) -- ++(0,-4ex);
+    \draw[hwwire,-] (p.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
+    \draw[hwwire,-] (m.south)  ++(-1ex, 0) -- ++(1ex,1ex) -- ++(1ex,-1ex); % horloge
+  \end{tikzpicture}
+}
+
+\newcommand{\progex}{
+  \begin{tabular}{llll}
+    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage initial} & \textrm{encodage Huffman de l'opcode} \\
+    \hline
+    
+         & leti	r0 17        & 0111 000 1000010001 & 100 000 1000010001 \\
+         & leti	r1 42        & 0111 001 1000101010 & 100 001 1000101010 \\
+         &                   &                     &                    \\
+				 & leti	r2 0				 & 0111 010 00				 & 100 010 00       	\\
+nonzero: & shift	right r0 1 & 1000 1 000 1				 & 00 1 000 1       	\\
+				 & jumpif	nc next		 & 1011 101 000001010	 & 01 101 000001010 	\\
+				 & add2	r2 r1				 & 0000 010 001				 & 1010 010 001     	\\
+next:		 & shift	left r1 1	 & 1000 0 001 1				 & 00 0 001 1       	\\
+				 & cmpi	r0 0				 & 0101 000 00				 & 11 000 00        	\\
+				 & jumpif	nz nonzero & 1011 001 010111011	 & 01 001 011000101 	\\
+         &                   &                                          \\
+loop:    & jump	loop         & 1010 011110011      & 10110 011110010    \\
+  \end{tabular}
+}
+
+\newcommand{\prefree}{
+  \begin{tabular}{|l||l||l||ll|}
+    \hline
+    \emph{addr}&  \emph{const} & \emph{shiftval} & \emph{size}& \\
+    adresses, déplacements & constantes ALU & constantes de shift & tailles     & \\
+    \hline
+    0 + 8 bits               & 0 + 1 bit      & 0 + 6 bits          & 00 : 1 bit &  01: 4 bits  \\ 
+%    \hline         
+    10 + 16 bits             & 10 + 8 bits    & 1  (constante 1)    & 100: 8 bits& 101: 16 bits \\
+%    \hline                  
+    110 + 32 bits            & 110 + 32 bits  &                     & 110: 32 bits &  \\
+%    \hline                  
+    111 + 64 bits            & 111 + 64 bits  &                     & 111: 64 bits &\\
+    \hline
+  \end{tabular}
+}
+
+\newcommand{\benchmark}{
+    \begin{tabular}{|r||c|c|c||c|c|c|c|c||c|}
+    \hline
+    & \multicolumn{3}{c||}{taille du programme} & \multicolumn{6}{c|}{bits échangés à l'exécution}                    \\
+    \hline
+
+    
+    benchmark      & instr     & bits       & BPI         & prog    & data R  & data W  & counters & branch  & total      \\
+    \hline
+    \hline
+    binmult~~~I    & 10        & 125        & 12.5        & 89.4\%  &         &         &          & 10,6\%  & 415        \\
+     H             &           & 113        & 11.3        & 85.5 \% &         &         &          & 14.5 \% & 373        \\
+    \emph{ msp430} & \emph{10} & \emph{192} & \emph{19.2} & --      & --      & --      & --       & --      & \emph{960} \\
+    \hline
+    \hline
+    matmul~~~I     & 112       & 1632       & 14.6        & 80.4 \% & 5.0 \%  & 2.6 \%  & 0.3 \%   & 11.8 \% & 1.72e8     \\ 
+     (dense)~  H   & 112       & 1817       & 16.2        & 75.4 \% & 5.6 \%  & 2.9 \%  & 0.3 \%   & 15.9 \% & 1.54e8     \\ 
+    \hline
+    matmul~~~I     & 112       & 1632       & 14.6        & 55.3 \% & 23.3 \% & 12.1 \% & 1.2 \%   & 8.0 \%  & 3.68e7     \\ 
+
+    (sparse)~ H & 112 & 1613 & 14.4  & 52.1 \% & 25.2 \% & 13.1 \% & 1.3 \% & 8.3 \% & 3.41e7\\ 
+
+    \hline
+    \hline
+    Chip8~~~I     & 768 & 14155 & 18.4 &  64.3 \% & 10.4 \% & 9.7 \% & 7.5 \% & 8.1 \% & 1.068e8       \\
+     H    & 768 & 13699 & 17.8 & 63.1 \% & 10.7 \% & 9.9 \% & 7.7 \% & 8.6 \% & 1.063e8\\ 
+    \hline
+  \end{tabular}
+}
