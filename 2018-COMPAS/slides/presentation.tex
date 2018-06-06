@@ -137,12 +137,13 @@ Données et instructions de taille variable au bit près
 \begin{frame}{L'interface processeur-mémoire proposée}
   \begin{figure}[b]
     \begin{center}
-      \scalebox{0.9}{\proco}
+      \scalebox{0.8}{\proco}
     \end{center}
   \end{figure}
   \begin{itemize}
   \item 6 fils seulement entre processeur et mémoire
   \item les données passent en série sur \texttt{D}
+  \item la mémoire est adressable par bit
   \item les adresses sont implicites:
     \begin{itemize}
     \item 4 compteurs auto-incrémentés, et dupliqués
@@ -352,10 +353,22 @@ Auto-critique: constantes en mémoire qui passent deux fois sur \texttt{D}.
 \begin{frame}{Et une vraie question}
   Existe-t-il un contexte dans lequel ceci est utile en pratique?
   \begin{itemize}
-  \item Cette interface limite la fréquence d'horloge bien en dessous du GHz.
-  \item En terme de consommation: il faut compter les transitions, \emph{y compris sur l'horloge}.
+  \item Cette interface limite la fréquence d'horloge bien en dessous des 100 MHz.
+  \item ... et chaque instructions prend en moyenne 12-20 cycles
+  \item En terme de consommation:
+    \begin{itemize}
+    \item il faut compter les transitions, \emph{y compris sur
+        l'horloge}.
   
-  \item A cause du lien série, les transitions économisées sur le bus d'adresse sont remplacées par  des transitions d'horloge. 
+  \item a cause du lien série, les transitions économisées sur le bus d'adresse sont remplacées par  des transitions d'horloge. 
+  \end{itemize}
+  
+\item En d'autre termes le marché est celui de
+  \begin{itemize}
+  \item systèmes ayant besoin de mémoire discrète (donc beaucoup de mémoire),  
+  \item mais pas de haute-performance...
+\end{itemize}
+
   \end{itemize}
 
   
