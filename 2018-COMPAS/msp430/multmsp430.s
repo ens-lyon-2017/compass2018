@@ -43,7 +43,7 @@ nonzero:
 next:	
   rla r11, r11
   cmp #0, r10
-  jnz loop
+  jnz nonzero
 
 
 loop:	
