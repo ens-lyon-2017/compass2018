@@ -117,7 +117,6 @@ eternal_loop:
 
 
 
-
 \begin{frame}{La règle du jeu de cette année}
 Données et instructions de taille variable au bit près
   \begin{itemize}
@@ -128,10 +127,27 @@ Données et instructions de taille variable au bit près
   \item objectif numéro 1: un jeu d'instructions universel
   \item objectif numéro 2: un jeu d'instructions optimisé
   \end{itemize}
-  
 \end{frame}
 
 
+
+\begin{frame}{Plaidoyer pour une mémoire adressable par bit}
+  \emph{Avec $2^{64}$  cases mémoires adressables, on se fiche bien de leur taille.}
+
+  \vfill
+  Actuellement,
+  \begin{itemize}
+  \item mémoire adressable par octet
+  \item donc gymnastiques différentes pour les données plus petites et les données plus grandes
+  \item par ailleurs la hiérarchie mémoire impose un alignement de 32, 64 ou 128 bits 
+  \end{itemize}
+
+  Avec une mémoire adressable par bits,
+  \begin{itemize}
+  \item on gagnerait en liberté dans le jeu d'instruction
+  \item au prix d'une couches supplémentaire dans la logique d'alignement des mémoire adressées par octets.
+  \end{itemize}
+\end{frame}
 
 
 \begin{frame}{L'interface processeur-mémoire proposée}
@@ -148,6 +164,7 @@ Données et instructions de taille variable au bit près
     \begin{itemize}
     \item 4 compteurs auto-incrémentés, et dupliqués
     \item les deux bits \texttt{Select} déterminent le compteur utilisé
+    \item MàJ d'un compteur: l'adresse passe sur  \texttt{D}
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -157,7 +174,7 @@ Données et instructions de taille variable au bit près
 
 \begin{frame}{Jeu d'instruction}
   \begin{itemize}
-  \item c\o eur de processeur classique: 32 ou 64 bits, 8 registres
+  \item c\oe ur de processeur classique: 32 ou 64 bits, 8 registres
   \item instructions à 0, 1, 2, 3, ou 4 opérandes, sans se poser de question
   \item code opération en premier (détermine combien d'opérande), suivi des opérandes
   \item registres toujours sur 3 bits mais constantes (et adresses) de taille variable
