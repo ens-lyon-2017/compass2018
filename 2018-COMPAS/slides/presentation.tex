@@ -11,6 +11,11 @@
 \usepackage{caption}
 \usepackage{ifthen}
 
+%un bug : https://tex.stackexchange.com/questions/426088/texlive-pretest-2018-beamer-and-subfig-collide
+\makeatletter
+\let\@@magyar@captionfix\relax
+\makeatother
+
 %\usetheme{Warsaw}
 \usecolortheme{beaver}
 
@@ -125,8 +130,13 @@ Données et instructions de taille variable au bit près
     \begin{itemize}
     \item donc l'énergie, mais en fait c'est un mensonge
     \end{itemize}
+  \item conséquences
+    \begin{itemize}
+    \item un seul fil de données
+    \item une mémoire adressable au bit près
+\end{itemize}
   \item objectif numéro 1: un jeu d'instructions universel
-  \item objectif numéro 2: un jeu d'instructions optimisé
+  \item objectif numéro 2: un jeu d'instructions optimisé à l'aide d'un codage de Huffman {\it (prefix-free)}
   \end{itemize}
   
 \end{frame}
@@ -156,7 +166,7 @@ Données et instructions de taille variable au bit près
 
 \begin{frame}{Jeu d'instruction}
   \begin{itemize}
-  \item c\o eur de processeur classique: 32 ou 64 bits, 8 registres
+  \item cœur de processeur classique: 32 ou 64 bits, 8 registres
   \item instructions à 0, 1, 2, 3, ou 4 opérandes, sans se poser de question
   \item code opération en premier (détermine combien d'opérande), suivi des opérandes
   \item registres toujours sur 3 bits mais constantes (et adresses) de taille variable
@@ -338,7 +348,7 @@ Auto-critique: constantes en mémoire qui passent deux fois sur \texttt{D}.
     \begin{itemize}
     \item assymétrie entre \texttt{pop} et \texttt{push}
     \end{itemize}
-  \item Comment grater plus?
+  \item Comment gratter plus?
     \begin{itemize}
     \item encodage des opcodes: sans doute peu à gagner.
     \item moins de 3 bits par registres ? (accumulateur implicite, fenêtre de registres)
