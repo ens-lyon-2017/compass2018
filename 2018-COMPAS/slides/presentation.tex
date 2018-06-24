@@ -122,7 +122,6 @@ eternal_loop:
 
 
 
-
 \begin{frame}{La règle du jeu de cette année}
 Données et instructions de taille variable au bit près
   \begin{itemize}
@@ -138,25 +137,44 @@ Données et instructions de taille variable au bit près
   \item objectif numéro 1: un jeu d'instructions universel
   \item objectif numéro 2: un jeu d'instructions optimisé à l'aide d'un codage de Huffman {\it (prefix-free)}
   \end{itemize}
-  
 \end{frame}
 
 
+
+\begin{frame}{Plaidoyer pour une mémoire adressable par bit}
+  \emph{Avec $2^{64}$  cases mémoires adressables, on se fiche bien de leur taille.}
+
+  \vfill
+  Actuellement,
+  \begin{itemize}
+  \item mémoire adressable par octet
+  \item donc gymnastiques différentes pour les données plus petites et les données plus grandes
+  \item par ailleurs la hiérarchie mémoire impose un alignement de 32, 64 ou 128 bits 
+  \end{itemize}
+
+  Avec une mémoire adressable par bits,
+  \begin{itemize}
+  \item on gagnerait en liberté dans le jeu d'instruction
+  \item au prix d'une couches supplémentaire dans la logique d'alignement des mémoire adressées par octets.
+  \end{itemize}
+\end{frame}
 
 
 \begin{frame}{L'interface processeur-mémoire proposée}
   \begin{figure}[b]
     \begin{center}
-      \scalebox{0.9}{\proco}
+      \scalebox{0.8}{\proco}
     \end{center}
   \end{figure}
   \begin{itemize}
   \item 6 fils seulement entre processeur et mémoire
   \item les données passent en série sur \texttt{D}
+  \item la mémoire est adressable par bit
   \item les adresses sont implicites:
     \begin{itemize}
     \item 4 compteurs auto-incrémentés, et dupliqués
     \item les deux bits \texttt{Select} déterminent le compteur utilisé
+    \item MàJ d'un compteur: l'adresse passe sur  \texttt{D}
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -362,10 +380,22 @@ Auto-critique: constantes en mémoire qui passent deux fois sur \texttt{D}.
 \begin{frame}{Et une vraie question}
   Existe-t-il un contexte dans lequel ceci est utile en pratique?
   \begin{itemize}
-  \item Cette interface limite la fréquence d'horloge bien en dessous du GHz.
-  \item En terme de consommation: il faut compter les transitions, \emph{y compris sur l'horloge}.
+  \item Cette interface limite la fréquence d'horloge bien en dessous des 100 MHz.
+  \item ... et chaque instructions prend en moyenne 12-20 cycles
+  \item En terme de consommation:
+    \begin{itemize}
+    \item il faut compter les transitions, \emph{y compris sur
+        l'horloge}.
   
-  \item A cause du lien série, les transitions économisées sur le bus d'adresse sont remplacées par  des transitions d'horloge. 
+  \item a cause du lien série, les transitions économisées sur le bus d'adresse sont remplacées par  des transitions d'horloge. 
+  \end{itemize}
+  
+\item En d'autre termes le marché est celui de
+  \begin{itemize}
+  \item systèmes ayant besoin de mémoire discrète (donc beaucoup de mémoire),  
+  \item mais pas de haute-performance...
+\end{itemize}
+
   \end{itemize}
 
   
