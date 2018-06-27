@@ -191,35 +191,6 @@ Données et instructions de taille variable au bit près
   \end{itemize}
 \end{frame}
 
-
-
-\begin{frame}{Un exemple}{multiplication entière}
-  \begin{center}
-    \tt\small
-    \begin{tabular}{llll}
-    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage}\\
-    \hline
-    
-				 & leti	r0 17				 & 0111 000 10 00010001 \\
-				 & leti	r1 42				 & 0111 001 10 00101010 \\
-				 &									 &										 \\
-				 & leti	r2 0				 & 0111 010 00				 \\
-nonzero: & shift	right r0 1 & 1000 1 000 1				 \\
-				 & jumpif	nc next		 & 1011 101 00 0001010	 \\
-				 & add2	r2 r1				 & 0000 010 001				 \\
-next:		 & shift	left r1 1	 & 1000 0 001 1				 \\
-				 & cmpi	r0 0				 & 0101 000 0 0				 \\
-				 & jumpif	nz nonzero & 1011 001 010111011	 \\
-				 &									 &										 \\
-loop:		 & jump	loop				 & 1010 011110011			 \\
-  \end{tabular}
-\end{center}
-Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les instructions les moins utiles.
-\end{frame}
-
-
-
-
 \begin{frame}{Encodage \emph{prefix-free} des constantes}
 
   \begin{center}
@@ -253,15 +224,39 @@ Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les in
       \hline
     \end{tabular}
   \end{center}
-Un relecteur nous a fait remarquer que c'était un genre de Gamma-code ad-hoc.
+  Un relecteur nous a fait remarquer que c'était un genre de Gamma-code ad-hoc.
 \end{frame}
 
+
+\begin{frame}{Un exemple}{multiplication entière}
+  \begin{center}
+    \tt\small
+    \begin{tabular}{llll}
+    \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage}\\
+    \hline
+    
+				 & leti	r0 17				 & 0111 000 10 00010001 \\
+				 & leti	r1 42				 & 0111 001 10 00101010 \\
+				 &									 &										 \\
+				 & leti	r2 0				 & 0111 010 00				 \\
+nonzero: & shift	right r0 1 & 1000 1 000 1				 \\
+				 & jumpif	nc next		 & 1011 101 00 0001010	 \\
+				 & add2	r2 r1				 & 0000 010 001				 \\
+next:		 & shift	left r1 1	 & 1000 0 001 1				 \\
+				 & cmpi	r0 0				 & 0101 000 0 0				 \\
+				 & jumpif	nz nonzero & 1011 001 010111011	 \\
+				 &									 &										 \\
+loop:		 & jump	loop				 & 1010 011110011			 \\
+  \end{tabular}
+\end{center}
+Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les instructions les moins utiles.
+\end{frame}
 
 
 \begin{frame}{Spécificité: les accès mémoire}
   \begin{itemize}
-  \item Instructions de lecture et écriture séquentielle de
-    \emph{size} bits depuis/vers un registre
+  \item Instructions de lecture séquentielle de
+    \emph{size} bits vers un registre
   \begin{itemize}
   \item avec \emph{padding} ou extension de signe
   \end{itemize}
@@ -270,7 +265,8 @@ Un relecteur nous a fait remarquer que c'était un genre de Gamma-code ad-hoc.
   \begin{itemize}
   \item uniquement lors d'une rupture de séquentialité
   \item par une instruction spéciale: \texttt{setctr}
-  \item l'adresse passe alors sur le fil \texttt{D} 
+  \item l'adresse passe alors sur le fil \texttt{D}
+  \item On n'envoie que les bits qui changent
   \end{itemize}
 \item Changement de PC (saut relatif, \texttt{call} absolu)
   \begin{itemize}
