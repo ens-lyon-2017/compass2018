@@ -2,7 +2,6 @@
 % !TEX encoding = UTF-8 Unicode
 
 \documentclass[slidetop,11pt,table]{beamer}
-
 %\usepackage[french]{babel}
 %\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -254,6 +253,11 @@ Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les in
 
 
 \begin{frame}{Spécificité: les accès mémoire}
+  \begin{figure}[b]
+    \begin{center}
+      \scalebox{0.5}{\proco}
+    \end{center}
+  \end{figure}
   \begin{itemize}
   \item Instructions de lecture séquentielle de
     \emph{size} bits vers un registre
@@ -261,11 +265,10 @@ Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les in
   \item avec \emph{padding} ou extension de signe
   \end{itemize}
   
-\item transferts d'adresses:
+\item transferts d'adresses : sur le fil \texttt{D}
   \begin{itemize}
   \item uniquement lors d'une rupture de séquentialité
-  \item par une instruction spéciale: \texttt{setctr}
-  \item l'adresse passe alors sur le fil \texttt{D}
+  \item par une instruction spéciale: \texttt{setctr} \emph{(set counter)}
   \item On n'envoie que les bits qui changent
   \end{itemize}
 \item Changement de PC (saut relatif, \texttt{call} absolu)
@@ -289,6 +292,7 @@ Auto-critique: constantes en mémoire qui passent deux fois sur \texttt{D}.
 
 \begin{frame}{Expériences et démos}
   \begin{itemize}
+  \item Un assembleur et un simulateur
   \item Benchmarks (écrits à la main en assembleur):
     \begin{itemize}
     \item multiplication de deux entiers binaires
