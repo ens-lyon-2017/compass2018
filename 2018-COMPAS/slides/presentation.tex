@@ -60,8 +60,8 @@
   \end{figure}
   Cycle de von Neuman:
   \begin{enumerate}
-  \item lire l'instruction à l'adresse PC, et incrémenter PC
-  \item exécuter cette instruction
+  \item lire l'instruction à l'adresse PC
+  \item l'exécuter
     \only<2->{
       \begin{itemize}
       \item faire un calcul
@@ -70,8 +70,7 @@
       \item ou changer la valeur de PC
       \end{itemize}
     }
-    
-  \item retourner en 1
+  \item incrémenter PC et retourner en 1
   \end{enumerate}
 \end{frame}
 
@@ -100,6 +99,10 @@ eternal_loop:
 
 
 \begin{frame}{Les questions qu'on se pose lorsqu'on conçoit un processeur}
+  \begin{figure}[h]
+    \centering
+    \scalebox{0.8}{\figVonNeumann{true}}
+  \end{figure}
   \begin{itemize}
   \item Quelles tailles pour $w_a$ et $w_d$
   \item Quelles sont les instructions les plus puissantes qu'on peut encoder en $w_d$ bits ?
@@ -119,10 +122,8 @@ eternal_loop:
   \item Écrire un simulateur et un programme assembleur
   \item Écrire plein d'assembleur
   \end{itemize}
-  Tous les ans une règle du jeu différente 
+  Tous les ans une règle du jeu différente
 \end{frame}
-
-
 
 \begin{frame}{La règle du jeu de cette année}
   Données et instructions de taille variable au bit près
@@ -131,33 +132,18 @@ eternal_loop:
     \begin{itemize}
     \item donc l'énergie, mais en fait c'est un mensonge
     \end{itemize}
+    \pause
   \item conséquences
     \begin{itemize}
     \item un seul fil de données
     \item une mémoire adressable au bit près
     \end{itemize}
+  \item problème
+    \begin{itemize}
+    \item 64 bits d'adresse pour un bit de données : impossible 
+  \end{itemize}
   \item objectif numéro 1: un jeu d'instructions universel
-  \item objectif numéro 2: un jeu d'instructions optimisé à l'aide d'un codage de Huffman {\it (prefix-free)}
-  \end{itemize}
-\end{frame}
-
-
-
-\begin{frame}{Plaidoyer pour une mémoire adressable par bit}
-  \emph{Avec $2^{64}$  cases mémoires adressables, on se fiche bien de leur taille.}
-
-  \vfill
-  Actuellement,
-  \begin{itemize}
-  \item mémoire adressable par octet
-  \item donc gymnastiques différentes pour les données plus petites et les données plus grandes
-  \item par ailleurs la hiérarchie mémoire impose un alignement de 32, 64 ou 128 bits 
-  \end{itemize}
-
-  Avec une mémoire adressable par bits,
-  \begin{itemize}
-  \item on gagnerait en liberté dans le jeu d'instruction
-  \item au prix d'une couches supplémentaire dans la logique d'alignement des mémoire adressées par octets.
+  \item objectif numéro 2: un jeu d'instructions optimisé
   \end{itemize}
 \end{frame}
 
@@ -182,15 +168,54 @@ eternal_loop:
 \end{frame}
 
 
-
-
 \begin{frame}{Jeu d'instruction}
   \begin{itemize}
   \item cœur de processeur classique: 32 ou 64 bits, 8 registres
   \item instructions à 0, 1, 2, 3, ou 4 opérandes, sans se poser de question
-  \item code opération en premier (détermine combien d'opérande), suivi des opérandes
+  \item code opération en premier, en {\it prefix-free} (détermine combien d'opérande), suivi des opérandes, ce qui permet de décoder l’instruction à la volée :
+    \begin{itemize}
+  \item Lire les bits un à un jusqu’à reconnaître un code opération
+  \item Lire le nombre de bits correspondant au nombre d’opérandes
+  \end{itemize}
+
   \item registres toujours sur 3 bits mais constantes (et adresses) de taille variable
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Encodage \emph{prefix-free} des constantes}
+
+  \begin{center}
+    \begin{tabular}{|l||l|}
+      \hline
+      \emph{addr}&  \emph{const}  \\
+      adresses, déplacements & constantes ALU    \\
+      \hline
+      0 + 8 bits               & 0 + 1 bit      \\ 
+      % \hline         
+      10 + 16 bits             & 10 + 8 bits    \\
+      % \hline                  
+      110 + 32 bits            & 110 + 32 bits  \\
+      % \hline                  
+      111 + 64 bits            & 111 + 64 bits   \\
+      \hline
+    \end{tabular}
+    
+    \begin{tabular}{|l||ll|}
+      \hline
+      \emph{shiftval} & \emph{size}& \\
+      constantes de shift & tailles     &              \\
+      \hline
+      0 + 6 bits          & 00 : 1 bit &  01: 4 bits  \\ 
+      % 
+      1  (constante 1)    & 100: 8 bits& 101: 16 bits \\
+      % 
+                      & 110: 32 bits &            \\
+                      % 
+                      & 111: 64 bits &             \\
+      \hline
+    \end{tabular}
+  \end{center}
+  Un relecteur nous a fait remarquer que c'était un genre de Gamma-code ad-hoc.
 \end{frame}
 
 
@@ -201,18 +226,18 @@ eternal_loop:
       \textrm{étiquette} & \textrm{mnémonique} & \textrm{encodage}\\
       \hline
       
-                         & leti	r0 17				 & 0111 000 10 00010001 \\
+                         & leti	r0 17 & 0111 000 10 00010001 \\	
                          & leti	r1 42				 & 0111 001 10 00101010 \\
                          &									 &										 \\
-                         & leti	r2 0				 & 0111 010 00				 \\
+                         & leti	r2 0				 & 0111 010 0 0				 \\
       nonzero: & shift	right r0 1 & 1000 1 000 1				 \\
-                         & jumpif	nc next		 & 1011 101 00 0001010	 \\
+                         & jumpif	nc next		 & 1011 101 0 00001010	 \\
                          & add2	r2 r1				 & 0000 010 001				 \\
       next:		 & shift	left r1 1	 & 1000 0 001 1				 \\
                          & cmpi	r0 0				 & 0101 000 0 0				 \\
-                         & jumpif	nz nonzero & 1011 001 010111011	 \\
+                         & jumpif	nz nonzero & 1011 001 0 10111011	 \\
                          &									 &										 \\
-      loop:		 & jump	loop				 & 1010 011110011			 \\
+      loop:		 & jump	loop				 & 1010 0 11110011			 \\
     \end{tabular}
   \end{center}
   Ici que des opcodes sur 4 bits, mais il y en a aussi sur 5 et 6 bits pour les instructions les moins utiles.
@@ -291,8 +316,8 @@ eternal_loop:
     \draw (20,9)node[above]{BPI(\%)}; 
     \foreach \n/\y in {binmult/1.5,matmul(sparse)/3.5,matmul(dense)/5.5,chip8/7.5} 
     \draw (0,\y) node [left] {\n};
-    \draw (18,1) node[fill=cyan] {\tiny Initial};
-    \draw (18,2) node[fill=magenta]{\tiny Huffman};
+    \draw (18,1) node[fill=cyan] {\small Initial};
+    \draw (18,2) node[fill=magenta]{\small Huffman};
   \end{tikzpicture}
 \end{frame}
 
@@ -306,8 +331,8 @@ eternal_loop:
     \draw (100,9)node[above]{\small \%}; 
     \foreach \n/\y in {binmult/1.5,matmul(sparse)/3.5,matmul(dense)/5.5,chip8/7.5} 
     \draw (0,\y) node [left] {\n};
-    \draw (85,7) node[fill=cyan,below] {\tiny Initial};
-    \draw (85,7) node[fill=magenta,above]{\tiny Huffman};
+    \draw (85,7) node[fill=cyan,below] {\small Initial};
+    \draw (85,7) node[fill=magenta,above]{\small Huffman};
     
   \end{tikzpicture}
 \end{frame}
@@ -329,14 +354,16 @@ eternal_loop:
     \item MSP430 et ARM ont un très bon encodage des instructions les plus courantes
     \item on paye le prix des préfixes d'auto-description
     \end{itemize}
-  \item Quelques challenges
-    \begin{itemize}
-    \item assymétrie entre \texttt{pop} et \texttt{push}
-    \end{itemize}
+  %\item Quelques challenges
+  %  \begin{itemize}
+  %  \item assymétrie entre \texttt{pop} et \texttt{push}
+  %  \end{itemize}
   \item Comment gratter plus?
     \begin{itemize}
     \item encodage des opcodes: sans doute peu à gagner.
+    \item plus d’instructions ?
     \item moins de 3 bits par registres ? (accumulateur implicite, fenêtre de registres)
+    \item Décoder les instructions directement en mémoire ?
     \end{itemize}
   \end{itemize}
 
@@ -370,6 +397,25 @@ eternal_loop:
   \centering{Merci pour votre attention}
 \end{frame}
 
+\begin{frame}{Plaidoyer pour une mémoire adressable par bit}
+  \emph{Avec $2^{64}$  cases mémoires adressables, on se fiche bien de leur taille.}
+
+  \vfill
+  Actuellement,
+  \begin{itemize}
+  \item mémoire adressable par octet
+  \item donc gymnastiques différentes pour les données plus petites et les données plus grandes
+  \item par ailleurs la hiérarchie mémoire impose un alignement de 32, 64 ou 128 bits 
+  \end{itemize}
+
+  Avec une mémoire adressable par bits,
+  \begin{itemize}
+  \item on gagnerait en liberté dans le jeu d'instruction
+  \item au prix d'une couches supplémentaire dans la logique d'alignement des mémoire adressées par octets.
+  \end{itemize}
+\end{frame}
+
+
 \begin{frame}{Encodage de Huffman}
   Principe : un encodage sans préfixe, optimal en taille de code.
   \newcommand{\choice}{node[left]{\footnotesize 0} node[right]{\footnotesize 1}}
@@ -399,43 +445,6 @@ eternal_loop:
 
   \end{figure}
 \end{frame}
-
-\begin{frame}{Encodage \emph{prefix-free} des constantes}
-
-  \begin{center}
-    \begin{tabular}{|l||l|}
-      \hline
-      \emph{addr}&  \emph{const}  \\
-      adresses, déplacements & constantes ALU    \\
-      \hline
-      0 + 8 bits               & 0 + 1 bit      \\ 
-      % \hline         
-      10 + 16 bits             & 10 + 8 bits    \\
-      % \hline                  
-      110 + 32 bits            & 110 + 32 bits  \\
-      % \hline                  
-      111 + 64 bits            & 111 + 64 bits   \\
-      \hline
-    \end{tabular}
-    
-    \begin{tabular}{|l||ll|}
-      \hline
-      \emph{shiftval} & \emph{size}& \\
-      constantes de shift & tailles     &              \\
-      \hline
-      0 + 6 bits          & 00 : 1 bit &  01: 4 bits  \\ 
-      % 
-      1  (constante 1)    & 100: 8 bits& 101: 16 bits \\
-      % 
-                      & 110: 32 bits &            \\
-                      % 
-                      & 111: 64 bits &             \\
-      \hline
-    \end{tabular}
-  \end{center}
-  Un relecteur nous a fait remarquer que c'était un genre de Gamma-code ad-hoc.
-\end{frame}
-
 
 \begin{frame}{accès mémoire en détail}
   \begin{center}
