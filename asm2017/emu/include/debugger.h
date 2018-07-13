@@ -136,7 +136,7 @@ void debugger_memory(void);
 	@arg	format	A printf()-like format for the message
 	@arg	...	Arguments required by the format
 */
-void dbglog(const char *format, ...);
+int dbglog(const char *format, ...);
 
 /*
 	dbgnlog() -- print partial messages to the console
@@ -146,7 +146,7 @@ void dbglog(const char *format, ...);
 	@arg	message	Message to display
 	@arg	n	Length of the message
 */
-void dbgnlog(const char *str, size_t n);
+int dbgnlog(const char *str, size_t n);
 
 /*
 	dbgerr() -- print error messages
@@ -156,7 +156,7 @@ void dbgnlog(const char *str, size_t n);
 	@arg	format	A printf()-like format for the error message
 	@args	...	Arguments required by the format
 */
-void dbgerr(const char *format, ...);
+int dbgerr(const char *format, ...);
 
 /*
 	debugger_prompt() -- get a command, returning a static buffer

@@ -61,6 +61,9 @@ static void debugger_arg(uint64_t *ptr, arg_t type)
 	const char *cnd_names[8] = {
 		"z", "nz", "sgt", "slt", "gt", "nc", "c", "v"
 	};
+	const char *fmt_names[16] = {
+		"char", "signed", "unsigned", "string",
+	};
 
 	/* Arguments retrieved from the disasm module */
 	uint gen;
@@ -144,6 +147,11 @@ static void debugger_arg(uint64_t *ptr, arg_t type)
 	case arg_pointer:
 		gen = disasm_pointer(mem, ptr);
 		wprintw(wcode, " %s", ptr_names[gen]);
+		return;
+
+	case arg_format:
+		gen = disasm_pformat(mem, ptr);
+		wprintw(wcode, " %s", fmt_names[gen]);
 		return;
 	}
 }

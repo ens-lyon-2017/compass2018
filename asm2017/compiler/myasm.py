@@ -4,8 +4,9 @@ from collections import namedtuple
 import re
 import math
 
-Command = namedtuple("Command", ["opcode", "operands"])
+Command   = namedtuple("Command", ["opcode", "operands"])
 Condition = namedtuple("Condition", ["opcode"])
+Format    = namedtuple("Format", ["opcode"])
 
 
 commands = {
@@ -20,35 +21,36 @@ commands = {
     "shift":   Command("1000",  ("dir", "reg", "shiftval")),
     "readze":  Command("10010", ("ctr", "size", "reg")),
 
-    "pop":     Command("1001001", ("size", "reg")),
+    "pop":     Command("1001001",  ("size", "reg")),
 
-    "readse":  Command("10011",   ("ctr", "size", "reg")),
-    "jump":    Command("1010",    ("addr_signed",)),
-    "jumpif":  Command("1011",    ("cond", "addr_signed")),
-    "or2":     Command("110000",  ("reg", "reg")),
-    "or2i":    Command("110001",  ("reg", "const")),
-    "and2":    Command("110010",  ("reg", "reg")),
-    "and2i":   Command("110011",  ("reg", "const")),
-    "write":   Command("110100",  ("ctr", "size", "reg")),
-    "call":    Command("110101",  ("addr_signed",)),
-    "setctr":  Command("110110",  ("ctr", "reg")),
-    "getctr":  Command("110111",  ("ctr", "reg")),
-    "push":    Command("1110000", ("size", "reg",)),
-    "return":  Command("1110001", ()),
-    "add3":    Command("1110010", ("reg", "reg", "reg")),
-    "add3i":   Command("1110011", ("reg", "reg", "const")),
-    "sub3":    Command("1110100", ("reg", "reg", "reg")),
-    "sub3i":   Command("1110101", ("reg", "reg", "const")),
-    "and3":    Command("1110110", ("reg", "reg", "reg")),
-    "and3i":   Command("1110111", ("reg", "reg", "const")),
-    "or3":     Command("1111000", ("reg", "reg", "reg")),
-    "or3i":    Command("1111001", ("reg", "reg", "const")),
-    "xor3":    Command("1111010", ("reg", "reg", "reg")),
-    "xor3i":   Command("1111011", ("reg", "reg", "const")),
-    "asr3":    Command("1111100", ("reg", "reg", "shiftval")),
-    "rese1":   Command("1111101", ()),
-    "rese2":   Command("1111110", ()),
-    "rese3":   Command("1111111", ())}
+    "readse":  Command("10011",    ("ctr", "size", "reg")),
+    "jump":    Command("1010",     ("addr_signed",)),
+    "jumpif":  Command("1011",     ("cond", "addr_signed")),
+    "or2":     Command("110000",   ("reg", "reg")),
+    "or2i":    Command("110001",   ("reg", "const")),
+    "and2":    Command("110010",   ("reg", "reg")),
+    "and2i":   Command("110011",   ("reg", "const")),
+    "write":   Command("110100",   ("ctr", "size", "reg")),
+    "call":    Command("110101",   ("addr_signed",)),
+    "setctr":  Command("110110",   ("ctr", "reg")),
+    "getctr":  Command("110111",   ("ctr", "reg")),
+    "push":    Command("1110000",  ("size", "reg",)),
+    "return":  Command("1110001",  ()),
+    "add3":    Command("1110010",  ("reg", "reg", "reg")),
+    "add3i":   Command("1110011",  ("reg", "reg", "const")),
+    "sub3":    Command("1110100",  ("reg", "reg", "reg")),
+    "sub3i":   Command("1110101",  ("reg", "reg", "const")),
+    "and3":    Command("1110110",  ("reg", "reg", "reg")),
+    "and3i":   Command("1110111",  ("reg", "reg", "const")),
+    "or3":     Command("1111000",  ("reg", "reg", "reg")),
+    "or3i":    Command("1111001",  ("reg", "reg", "const")),
+    "xor3":    Command("1111010",  ("reg", "reg", "reg")),
+    "xor3i":   Command("1111011",  ("reg", "reg", "const")),
+    "asr3":    Command("1111100",  ("reg", "reg", "shiftval")),
+    "rese1":   Command("1111101",  ()),
+    "rese2":   Command("1111110",  ()),
+    "print":   Command("11111110", ("format", "reg")),
+    "printi":  Command("11111111", ("format", "const"))}
 
 conditions = {
     "eq":   Condition("000"),
@@ -64,6 +66,11 @@ conditions = {
     "c":    Condition("110"),
     "v":    Condition("111")}
 
+formats = {
+    "char":      Format("0000"),
+    "signed":    Format("0001"),
+    "unsigned":  Format("0010"),
+    "string":    Format("0011")}
 
 class TokenError(ValueError):
     pass
@@ -339,6 +346,14 @@ def asm_cond(s):
     return conditions[res[0]].opcode
 
 
+re_format = re.compile(r"(char|signed|unsigned|string)")
+
+
+def asm_format(s):
+    res = re_format.findall(s)
+    return formats[res[0]].opcode
+
+
 def asm_remove_comments(s):
     return s.split(";")[0]
 
@@ -388,6 +403,9 @@ def asm_line(s):
 
         elif value_type == "cond":
             linecode.append(asm_cond(value))
+
+        elif value_type == "format":
+            linecode.append(asm_format(value))
 
         else:
             raise ValueError("Unknow value type : {}".format(value_type))

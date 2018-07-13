@@ -416,6 +416,9 @@ void debugger(const char *filename, cpu_t *cpu)
 	dbglog("Welcome to the debugger. Type 'help' to get a summary of the "
 		"commands.\n");
 
+	/* Indicate that the CPU is being debugged */
+	cpu->dbg = 1;
+
 	/* Now, finally run the debugger! */
 
 	char *cmd, **argv;

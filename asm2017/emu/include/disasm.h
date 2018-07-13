@@ -15,7 +15,7 @@
 #include <memory.h>
 
 /* Number of different instructions */
-#define	DISASM_INS_COUNT	37
+#define	DISASM_INS_COUNT 39
 
 /*
 	arg_t enumeration
@@ -35,6 +35,7 @@ typedef enum
 	arg_shift	= 'h',	/* Shifts: 1b on 1 bit, or 7 bits */
 	arg_size	= 's',	/* Size: 2 or 3 bits */
 	arg_pointer	= 'p',	/* Pointer: PC, SP, A0 or A1 on 2 bits */
+	arg_format	= 'f',	/* Format: char, (un)signed, string */
 } arg_t;
 
 /*
@@ -138,12 +139,12 @@ int64_t disasm_addr(memory_t *mem, uint64_t *ptr, uint *size);
 	@returns	Constant read and extended
 */
 uint64_t disasm_lconst(memory_t *mem, uint64_t *ptr, uint *size);
- int64_t disasm_aconst(memory_t *mem, uint64_t *ptr, uint *size);
+int64_t  disasm_aconst(memory_t *mem, uint64_t *ptr, uint *size);
 
 /*
 	disasm_shift() -- read a shift constant
 	@returns	Unsigned shift constant on 6 bits
- */
+*/
 uint disasm_shift(memory_t *mem, uint64_t *ptr);
 
 /*
@@ -159,9 +160,15 @@ uint disasm_size(memory_t *mem, uint64_t *ptr);
 uint disasm_pointer(memory_t *mem, uint64_t *ptr);
 
 /*
+	disasm_pformat() -- read a print format
+	@returns	Print format: char, signed, unsigned, string...
+*/
+uint disasm_pformat(memory_t *mem, uint64_t *ptr);
+
+/*
     disasm_inst_length() -- give the length of an instruction
     @arg    id  the identifier of an instruction
-    @returns    the length of the instruction 
+    @returns    the length of the instruction
 */
 uint disasm_instr_length(uint id);
 

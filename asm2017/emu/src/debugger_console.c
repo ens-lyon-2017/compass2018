@@ -13,33 +13,37 @@
 #include <stdarg.h>
 
 /* dbglog() -- print messages to the console */
-void dbglog(const char *format, ...)
+int dbglog(const char *format, ...)
 {
 	va_list args;
 
 	va_start(args, format);
-	vw_printw(wcli, format, args);
+	int x = vw_printw(wcli, format, args);
 	va_end(args);
+
+	return x;
 }
 
 /* dbgnlog() -- print partial messages to the console */
-void dbgnlog(const char *str, size_t n)
+int dbgnlog(const char *str, size_t n)
 {
-	waddnstr(wcli, str, n);
+	return waddnstr(wcli, str, n);
 }
 
 /* dbgerr() -- print error messages */
-void dbgerr(const char *format, ...)
+int dbgerr(const char *format, ...)
 {
 	va_list args;
 
 	wattron(wcli, COLOR_PAIR(color_error));
-	dbglog("error: ");
+	int x = dbglog("error: ");
 	wattroff(wcli, COLOR_PAIR(color_error));
 
 	va_start(args, format);
-	vw_printw(wcli, format, args);
+	x += vw_printw(wcli, format, args);
 	va_end(args);
+
+	return x;
 }
 
 /* debugger_prompt() -- get a command, returning a static buffer */

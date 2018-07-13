@@ -41,6 +41,7 @@ typedef struct
 	uint m	:1;		/* Memory, indicates changes to memory */
 	uint t	:1;		/* Counter, signals counter changes */
 	uint s	:1;		/* Stop, indicates stop orders from user */
+	uint dbg :1;		/* Is the CPU being debugged? */
 	volatile uint sleep :1;	/* Current sleeping */
 
 	uint64_t ptr[4];	/* There are no pointers among r0..r7 */

@@ -6,23 +6,26 @@
 
 #define	r4(n)	n, n, n, n
 #define	r8(n)	r4(n), r4(n)
+#define r16(n)	r8(n), r8(n)
 
-/* Associate a unique instruction id to all sequences of 7 bits. This table
+/* Associate a unique instruction id to all sequences of 8 bits. This table
    avoids having to read 4 bits, test if it's a valid instruction (Huffman
-   encoding), if not, read another bit, test again... until 7 bits.
-   This is the default encoding -- ids will store the encoding default or not */
-static const uint8_t default_ids[128] = {
-	r8(0), r8(1), r8(2), r8(3), r8(4), r8(5), r8(6), r8(7),
-	r8(8), r4(9), r4(10), r8(11), r8(12),
-	13, 13, 14, 14, 15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20,
-	21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-};
-/* Indicate the length of each unique instruction id. */
-static uint8_t length[37] = {
-	r8(4), 4, 5, 5, 4, 4, r8(6), r8(7), r8(7)
+   encoding), if not, read another bit, test again... until 8 bits.
+   This is the default encoding; --load-huffman can change it */
+static const uint8_t default_ids[256] = {
+	r16(0), r16(1), r16(2), r16(3), r16(4), r16(5), r16(6), r16(7),
+	r16(8), r8(9), r8(10), r16(11), r16(12),
+	r4(13), r4(14), r4(15), r4(16), r4(17), r4(18), r4(19), r4(20),
+	21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28,
+	29, 29, 30, 30, 31, 31, 32, 32, 33, 33, 34, 34, 35, 36, 37, 38,
 };
 
-static uint opcode_size = 7;
+/* Indicate the length of each unique instruction id. */
+static uint8_t length[DISASM_INS_COUNT] = {
+	r8(4), 4, 5, 5, 4, 4, r8(6), r8(7), r4(7), 7, 7, 8, 8, 8, 8,
+};
+
+static uint opcode_size = 8;
 static uint8_t *ids;
 /* Record if we have to manually free array pointed by ids */
 static uint8_t instr_set_dynamic_alloc = 0;
@@ -33,7 +36,7 @@ static uint8_t instr_set_dynamic_alloc = 0;
    of the arg_t enumeration and represent the instruction's arguments. The
    fifth letter is an element of the ctgy_t enumeration and classifies the
    instruction. The mnemonic is read starting at index 6. */
-static const char instructions[37][16] = {
+static const char instructions[DISASM_INS_COUNT][16] = {
 	"rr- A add2",	"rl- A add2i",	"rr- A sub2",	"rl- A sub2i",
 	"rr- T cmp",	"rc- T cmpi",	"rr- L let",	"rc- L leti",
 	"drh A shift",	"psr M readze", "psr M readse",	"a-- J jump",
@@ -43,12 +46,12 @@ static const char instructions[37][16] = {
 	"rrl A add3i",	"rrr A sub3",	"rrl A sub3i",	"rrr A and3",
 	"rrl A and3i",	"rrr A or3",	"rrl A or3i",	"rrr A xor3",
 	"rrl A xor3i",	"rrh A asr3",	"l-- C sleep",	"r-- A rand",
-	"--- C (res)",
+	"ra- M lea",	"fr- C print",	"fl- C printi",
 };
 
 /* Number of metadata bytes in the array above. The instruction mnemonic starts
    at offset INTSR_INFORMATION_BITS. */
-#define INSTR_INFORMATION_BITS (6)
+#define INSTR_INFORMATION_BITS 6
 
 /* load_encoding() -- load a huffman encoding as instruction set
    Loads the default encoding if "filename" is NULL. Returns non-zero
@@ -78,7 +81,7 @@ uint load_encoding(const char *filename)
 	char opcode_str[128];
 	uint64_t opcode;
 
-	for (int i = 0; i < 37; i++)
+	for (int i = 0; i < DISASM_INS_COUNT; i++)
 	{
 		fscanf(huffman_f, "%63[^ ] %u %u %127[01]\n", mnemonic, &iid,
 			&size, opcode_str);
@@ -232,6 +235,13 @@ uint disasm_pointer(memory_t *mem, uint64_t *ptr)
 {
 	*ptr += 2;
 	return memory_read(mem, *ptr - 2, 2);
+}
+
+/* disasm_pformat() -- read a print format */
+uint disasm_pformat(memory_t *mem, uint64_t *ptr)
+{
+	*ptr += 4;
+	return memory_read(mem, *ptr - 4, 4);
 }
 
 uint disasm_instr_length(uint id)

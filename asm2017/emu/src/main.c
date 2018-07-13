@@ -470,7 +470,7 @@ void print_stats(int latex)
 	printf("\n-----------------------------------------------\n");
 	printf("Exchanges between the Memory and the Processor:\n");
         printf("-----------------------------------------------\n\n");
-	
+
         printf(" Instruction Read & Memory Read & Memory Write & Get/Set Counters & Call/Return/Jump & Total "
 
                        "of exchanged bits \\\\ \n");
@@ -482,7 +482,7 @@ void print_stats(int latex)
 	       (100.0 * ctr_access_bits) / data_exchange,
 	       (100.0 * jump_bits) / data_exchange,
 	       (double) data_exchange);
-	
+
 	}
 }
 

@@ -24,17 +24,21 @@ class LexType(AutoNumber):
     MEMCOUNTER = ()
     OPERATION = ()
     DIRECTION = ()
+    FORMAT = ()
     CONDITION = ()
     REGISTER = ()
     COMMENT = ()
     NEWLINE = ()
     ENDFILE = ()
     INCLUDE = ()
+    LITSTRING = ()
+    STRING = ()
     NUMBER = ()
     LABEL = ()
     SKIP = ()
     BINARY = ()
     CONS = ()
+    CHAR = ()
     MISMATCH = ()
 
 
@@ -42,6 +46,8 @@ class ValueType(AutoNumber):
     MEMCOUNTER = ()
     DIRECTION = ()
     CONDITION = ()
+    FORMAT = ()
+    STRING = ()
     UCONSTANT = ()  # Unsigned Constant
     SCONSTANT = ()  # Signed Constant
     RADDRESS = ()  # Relative address

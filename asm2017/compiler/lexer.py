@@ -21,8 +21,8 @@ class Lexer(object):
 
         # Operators
         token_specification[LexType.OPERATION]  = r'\b(?:add|sub|cmp|let|shift|readze|readse|' + \
-                           r'jump|or|and|write|call|setctr|getctr|push|' +\
-                           r'return|xor|asr|pop|sleep|rand)\b'
+                           r'jump|or|and|write|call|setctr|getctr|push|' + \
+                           r'return|xor|asr|pop|sleep|rand|lea|print)\b'
 
         # Values
         token_specification[LexType.COMMENT]     = r';(?:.|[ \t])*'
@@ -30,12 +30,16 @@ class Lexer(object):
         token_specification[LexType.DIRECTION]   = r'\b(?:left|right)\b'
         token_specification[LexType.NUMBER]      = r'[+-]?(?:0x[0-9A-Fa-f]+|[0-9]+)\b'
         token_specification[LexType.CONDITION]   = r'\b(?:eq|z|neq|nz|sgt|slt|gt|ge|nc|lt|c|v|le)\b'
+        token_specification[LexType.FORMAT]      = r'\b(?:char|signed|unsigned|string)\b'
         token_specification[LexType.MEMCOUNTER]  = r'\b(?:pc|sp|a0|a1)\b'
+        token_specification[LexType.LITSTRING]   = r'"(?:[^\\"]|\\[ntr"\\])+"'
+        token_specification[LexType.CHAR]        = r"'(?:[^\\]|\\[ntr\\])'"
 
         # LABELS/IMPORTS
         token_specification[LexType.LABEL]       = r'\b[a-zA-Z_][a-z_A-Z0-9]*:?'
         token_specification[LexType.INCLUDE]     = r'\.include\s+[a-zA-z_][a-z_A-Z0-9\.]*\b'
         token_specification[LexType.CONS]        = r'\.const'
+        token_specification[LexType.STRING]      = r'\.string'
         token_specification[LexType.BINARY]      = r'#[01]+'
 
         # Tokenizer stuff
@@ -55,6 +59,9 @@ class Lexer(object):
         self.aliases = {
             LexType.CONDITION: {"z": "eq", "nz": "neq", "nc": "ge", "c": "lt",
                                 "le": "v"}
+        }
+        self.escapes = {
+            'n': '\n', 't': '\t', 'r': '\r', '"': '"', '\\': '\\',
         }
 
         self.includes = set()
@@ -120,6 +127,32 @@ class Lexer(object):
                     print("/!\ Lexer Error in file \"{filename}\" line {line_num}:".format(**locals()))
                     print("/!\       {e}".format(**locals()))
                     sys.exit(1)
+
+            elif kind is LexType.STRING:
+                column = match.start() - line_start
+                yield Token(LexType.OPERATION, "string", name, line_num, column)
+
+            elif kind is LexType.LITSTRING:
+                esc_on = False
+                result = ""
+
+                for c in value[1:-1]:
+                    if esc_on:
+                        result += self.escapes[c]
+                        esc_on = False
+                    else:
+                        if c == '\\': esc_on = True
+                        else: result += c
+
+                column = match.start() - line_start
+                yield Token(LexType.LITSTRING, result, name, line_num, column)
+
+            elif kind is LexType.CHAR:
+                column = match.start() - line_start
+                if value[1] == '\\': value = self.escapes[value[2]]
+                else: value = value[1]
+                code = ord(value)
+                yield Token(LexType.NUMBER, code, name, line_num, column)
 
             else:
                 column = match.start() - line_start

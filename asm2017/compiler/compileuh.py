@@ -34,8 +34,11 @@ possible_transition = {
     "pop":    ["pop"],
     "label":  ["label"],
     "const":  ["const"],
+    "string": ["string"],
     "sleep":  ["sleep"],
-    "rand":   ["rand"]}
+    "rand":   ["rand"],
+    "lea":    ["leal"],
+    "print":  ["print", "printi"]}
 
 
 VT = ValueType
@@ -45,10 +48,12 @@ type_specs = {
                       VT.AADDRESS, VT.SHIFTVAL, VT.SIZE],
     LexType.DIRECTION:  [VT.DIRECTION],
     LexType.CONDITION:  [VT.CONDITION],
+    LexType.FORMAT:     [VT.FORMAT],
+    LexType.LITSTRING:  [VT.STRING],
     LexType.MEMCOUNTER: [VT.MEMCOUNTER],
     LexType.REGISTER:   [VT.REGISTER],
     LexType.LABEL:      [VT.LABEL],
-    LexType.BINARY:     [VT.BINARY]
+    LexType.BINARY:     [VT.BINARY],
 }
 
 asr_specs = {
@@ -103,12 +108,13 @@ asr_specs = {
 
     "asr3":    (VT.REGISTER, VT.REGISTER, VT.SHIFTVAL),
 
-    "reserved1":   (),
-    "reserved2":   (),
-    "reserved3":   (),
+    "leal":    (VT.REGISTER, VT.LABEL),
+    "print":   (VT.FORMAT, VT.REGISTER),
+    "printi":  (VT.FORMAT, VT.SCONSTANT),
 
     "label":       (VT.LABEL,),
     "const":       (VT.UCONSTANT, VT.BINARY),
+    "string":      (VT.STRING,),
     "sleep":       (VT.UCONSTANT,),
     "rand":       (VT.REGISTER,)}
 
@@ -154,8 +160,10 @@ default_opcode = {
     "xor3i":   "1111011",
     "asr3":    "1111100",
     "sleep":   "1111101",
-    "rand":    "1111110",
-    "reserved3":   "1111111"}
+    "rand":    "11111100",
+    "lea":     "11111101",
+    "print":   "11111110",
+    "printi":  "11111111"}
 
 
 def count_operations(c, it):

@@ -92,6 +92,12 @@ class CleartextBitcodeBackEnd(BackEnd):
         "lt": "110",
         "v":  "111"}
 
+    formats = {
+        "char":     "0000",
+        "signed":   "0001",
+        "unsigned": "0010",
+        "string":   "0011"}
+
     def handle_line(self, line, space=None):
         if space is None:
             if "b" in self.write_mode:
@@ -106,6 +112,14 @@ class CleartextBitcodeBackEnd(BackEnd):
             s = typed_args[1].raw_value
 
             self.out_queue.push(s)
+            return None
+
+        if funcname == "string":
+            val = lambda c: ("00000000" + bin(ord(c))[2:])[-8:]
+            data = typed_args[0].raw_value
+            data = "".join(map(val, data))
+
+            self.out_queue.push(data)
             return None
 
         realise_line = [self.huffman_tree[funcname]]
@@ -227,6 +241,9 @@ class CleartextBitcodeBackEnd(BackEnd):
 
     def bin_condition(self, val):
         return self.conditions[val]
+
+    def bin_format(self, val):
+        return self.formats[val]
 
     def bin_label(self, val):
         raise BackEndError("Label unsported in this mode (faut pas déconner)")

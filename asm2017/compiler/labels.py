@@ -17,7 +17,7 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
         acc = ""
 
         for line in self.line_gene:
-            if line.funcname not in ("jumpl", "jumpifl", "calll", "label"):
+            if line.funcname not in ("jumpl","jumpifl","calll","leal","label"):
                 CleartextBitcodeBackEnd.handle_line(self, line)
 
                 while not self.out_queue.is_empty():
@@ -37,6 +37,8 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
                     fullcode.append((len(bitcode) + 3, line))
                 elif line.funcname is "calll":
                     fullcode.append((len(bitcode), line))
+                elif line.funcname is "leal":
+                    fullcode.append((len(bitcode) + 3, line))
                 elif line.funcname is "label":
                     fullcode.append((0, line))
 
@@ -90,16 +92,18 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
 
         # addr init
         for j, (l, x) in enumerate(fullcode):
-            if type(x) is Line and x.funcname in ("jumpl", "jumpifl", "calll"):
+            if type(x) is Line and x.funcname in \
+            ("jumpl", "jumpifl", "calll", "leal"):
                 addr_values[j] = (8, 0)
 
         while True:
 
             for j, (l, x) in enumerate(fullcode):
-                if type(x) is Line and x.funcname in ("jumpl", "jumpifl"):
+                if type(x) is Line and x.funcname in \
+                ("jumpl", "jumpifl", "leal"):
                     if x.funcname is "jumpl":
                         label = x.typed_args[0].raw_value
-                    elif x.funcname is "jumpifl":
+                    elif x.funcname is "jumpifl" or x.funcname is "leal":
                         label = x.typed_args[1].raw_value
 
                     if label not in label_dict:
@@ -160,6 +164,9 @@ class LabelsClearTextBackEnd(CleartextBitcodeBackEnd):
                 if x.funcname is "jumpifl":
                     cond = x.typed_args[0].raw_value
                     bitcode += space + self.bin_condition(cond)
+                if x.funcname is "leal":
+                    reg = x.typed_args[0].raw_value
+                    bitcode += space + self.bin_register(reg)
                 k, n = addr_values[i]
                 bitcode += space + self.bit_prefix[k] + self.binary_repr(n, k,signed=True)
 

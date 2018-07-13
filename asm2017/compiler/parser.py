@@ -93,7 +93,8 @@ class Parser(object):
 
         if args_types not in self.functions[fun_name].keys():
             raise ParserError(
-                "Arguments types don't match function : {}".format(fun_name))
+                "Arguments types don't match function {} : {}"
+                 .format(fun_name, args_types))
 
         funcname, goal_args_type = self.functions[fun_name][args_types]
 
@@ -125,6 +126,12 @@ right range".format(**locals()))
         return value
 
     def read_condition(self, value):
+        return value
+
+    def read_string(self, value):
+        return value
+
+    def read_format(self, value):
         return value
 
     def read_uconstant(self, value):

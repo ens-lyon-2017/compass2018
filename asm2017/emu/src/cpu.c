@@ -5,6 +5,10 @@
 #include <util.h>
 #include <unistd.h>
 
+/* Bit of a hack to gt dbglog() */
+#define _DEBUGGER_SOURCE
+#include <debugger.h>
+
 /* cpu_new() -- create a CPU and give it a memory */
 cpu_t *cpu_new(memory_t *mem)
 {
@@ -26,6 +30,7 @@ cpu_t *cpu_new(memory_t *mem)
 	cpu->m = 0;
 	cpu->t = 0;
 	cpu->s = 0;
+	cpu->dbg = 0;
 
 	/* Initialize pointers according to the memory geometry */
 	cpu->ptr[PC] = 0x0000000000000000l;
@@ -538,9 +543,50 @@ static void _rand(cpu_t *cpu)
 	cpu->r[rd] = ((uint64_t)rand() << 32) | rand();
 }
 
-static void res_2(cpu_t *cpu)
+static void lea(cpu_t *cpu)
 {
-	fatal("invalid opcode at %x (1111111)", cpu->ptr[PC]);
+	uint reg = get(reg);
+	int64_t diff = get(addr, NULL);
+
+	cpu->r[reg] = cpu->ptr[PC] + diff;
+}
+
+static void print_common(cpu_t *cpu, uint fmt, uint64_t val)
+{
+	int (*print)(const char *format, ...);
+	int byte;
+
+	print = (cpu->dbg) ? dbglog : printf;
+
+	if(fmt == 0) print("%c", val & 0xff);
+	if(fmt == 1) print("%ld", val);
+	if(fmt == 2) print("%#lx", val);
+	if(fmt == 3) while(1)
+	{
+		byte = memory_read(cpu->mem, val, 8);
+		if(!byte) break;
+		val += 8;
+		print("%c", byte);
+	}
+}
+
+static void print(cpu_t *cpu)
+{
+	uint fmt = get(pformat);
+	uint reg = get(reg);
+	print_common(cpu, fmt, cpu->r[reg]);
+}
+
+static void printi(cpu_t *cpu)
+{
+	uint fmt = get(pformat);
+	uint64_t cst;
+
+	/* Signed constants */
+	if(fmt == 1) cst = get(aconst, NULL);
+	else cst = get(lconst, NULL);
+
+	print_common(cpu, fmt, cst);
 }
 
 /* Array of all instruction routines */
@@ -554,7 +600,7 @@ static void (*instructions[DISASM_INS_COUNT])(cpu_t *cpu) = {
 	add3i,		sub3,		sub3i,		and3,
 	and3i,		or3,		or3i,		xor3,
 	xor3i,		asr3,		_sleep,		_rand,
-	res_2,
+	lea,		print,		printi,
 };
 
 /* cpu_dump() -- print CPU state to a stream */
