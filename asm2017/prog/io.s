@@ -19,7 +19,7 @@
 	print	char 126
 	print	char '\n'
 
-	print	signed -12
+	print	unsigned '0'
 	print	char '\n'
 
 ; Halt program (the emulator will detect this and avoid looping forever)

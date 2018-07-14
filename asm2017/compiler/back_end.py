@@ -117,7 +117,7 @@ class CleartextBitcodeBackEnd(BackEnd):
         if funcname == "string":
             val = lambda c: ("00000000" + bin(ord(c))[2:])[-8:]
             data = typed_args[0].raw_value
-            data = "".join(map(val, data))
+            data = "".join(map(val, data)) + "00000000"
 
             self.out_queue.push(data)
             return None
