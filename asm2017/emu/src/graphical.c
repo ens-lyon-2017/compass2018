@@ -1,3 +1,5 @@
+#ifndef NO_SDL
+
 #include <graphical.h>
 #include <errors.h>
 #include <SDL2/SDL.h>
@@ -311,3 +313,5 @@ int thread_main(void *args_void)
 	/* Simply leave, the main thread will clean up everything */
 	return 0;
 }
+
+#endif /* NO_SDL */

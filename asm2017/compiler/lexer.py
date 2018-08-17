@@ -29,7 +29,7 @@ class Lexer(object):
         token_specification[LexType.REGISTER]    = r'\b(?:r|R)[0-9]+\b'
         token_specification[LexType.DIRECTION]   = r'\b(?:left|right)\b'
         token_specification[LexType.NUMBER]      = r'[+-]?(?:0x[0-9A-Fa-f]+|[0-9]+)\b'
-        token_specification[LexType.CONDITION]   = r'\b(?:eq|z|neq|nz|sgt|slt|gt|ge|nc|lt|c|v|le)\b'
+        token_specification[LexType.CONDITION]   = r'\b(?:eq|z|neq|nz|sgt|slt|sge|ge|nc|lt|c|sle)\b'
         token_specification[LexType.FORMAT]      = r'\b(?:char|signed|unsigned|string)\b'
         token_specification[LexType.MEMCOUNTER]  = r'\b(?:pc|sp|a0|a1)\b'
         token_specification[LexType.LITSTRING]   = r'"(?:[^\\"]|\\[ntr"\\])+"'
@@ -57,8 +57,7 @@ class Lexer(object):
         self.rexp = re.compile(tok_regex)
 
         self.aliases = {
-            LexType.CONDITION: {"z": "eq", "nz": "neq", "nc": "ge", "c": "lt",
-                                "le": "v"}
+            LexType.CONDITION: {"z": "eq", "nz": "neq", "nc": "ge", "c": "lt" }
         }
         self.escapes = {
             'n': '\n', 't': '\t', 'r': '\r', '"': '"', '\\': '\\',

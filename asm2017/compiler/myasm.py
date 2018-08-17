@@ -59,9 +59,8 @@ conditions = {
     "nz":   Condition("001"),
     "sgt":  Condition("010"),
     "slt":  Condition("011"),
-    "gt":   Condition("100"),
-    "ge":   Condition("101"),
-    "nc":   Condition("101"),
+    "sge":  Condition("100"),
+    "sle":  Condition("101"),
     "lt":   Condition("110"),
     "c":    Condition("110"),
     "v":    Condition("111")}
@@ -338,7 +337,7 @@ def asm_addr_unsigned(s):
         raise TokenError("invalid unsigned address : not in range")
 
 
-re_cond = re.compile(r"(eq|z|neq|nz|sgt|slt|gt|ge|nc|lt|c|v)")
+re_cond = re.compile(r"(eq|z|neq|nz|sgt|slt|sge|sle|lt|c|v)")
 
 
 def asm_cond(s):

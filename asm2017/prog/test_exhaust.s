@@ -124,15 +124,15 @@
 	leti	r2 0
 	jumpif	slt 9
 	leti	r3 0
-	jumpif	gt 9
+	jumpif	sge 9
 	leti	r4 0
 	jumpif	ge 9
 	leti	r5 0
 	jumpif	lt 9
 	leti	r6 0
-	jumpif	v 9
+	jumpif	sle 9
 	leti	r7 0
-	; CHECK that r0..r7 = 0, 1, 0, 1, 0, 0, 1, 0
+	; CHECK that r0..r7 = 0, 1, 0, 1, 0, 0, 1, 1
 
 ; or2, or2i, and2, and2i
 	leti	r0 6

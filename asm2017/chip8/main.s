@@ -187,7 +187,7 @@ _8xyn_entry:
 _8xy0:
 	; vx = vy
 	cmpi	r6 0
-	jumpif	gt _8xy1
+	jumpif	sgt _8xy1
 	let	r1 r5
 	call	cpu_getReg
 	let	r1 r4
@@ -198,7 +198,7 @@ _8xy0:
 _8xy1:
 	; vx |= vy
 	cmpi	r6 1
-	jumpif	gt _8xy2
+	jumpif	sgt _8xy2
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0
@@ -212,7 +212,7 @@ _8xy1:
 _8xy2:
 	; vx &= vy
 	cmpi	r6 2
-	jumpif	gt _8xy3
+	jumpif	sgt _8xy3
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0
@@ -226,7 +226,7 @@ _8xy2:
 _8xy3:
 	; vx |= vy
 	cmpi	r6 3
-	jumpif	gt _8xy4
+	jumpif	sgt _8xy4
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0
@@ -240,7 +240,7 @@ _8xy3:
 _8xy4:
 	; vx += vy
 	cmpi	r6 4
-	jumpif	gt _8xy5
+	jumpif	sgt _8xy5
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0
@@ -261,7 +261,7 @@ _8xy4:
 _8xy5:
 	; vx -= vy
 	cmpi	r6 5
-	jumpif	gt _8xy6
+	jumpif	sgt _8xy6
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0
@@ -283,7 +283,7 @@ _8xy5:
 _8xy6:
 	; vx = vy = vy >> 1
 	cmpi	r6 6
-	jumpif	gt _8xy7
+	jumpif	sgt _8xy7
 	let	r1 r5
 	call	cpu_getReg
 	let	r6 r0
@@ -306,7 +306,7 @@ _8xy6:
 _8xy7:
 	; vx = vy - vx
 	cmpi	r6 7
-	jumpif	gt _8xye
+	jumpif	sgt _8xye
 	let	r1 r5
 	call	cpu_getReg
 	let	r5 r0

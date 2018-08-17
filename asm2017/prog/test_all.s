@@ -50,12 +50,12 @@ getctr  pc r0
                             jump  neq -34821318
                             jump  slt 34821318
                             jump  sgt -34821318
-                                                jump  gt 34821318
+                                                jump  sge 34821318
                                                 jump  ge -34821318
                                 jump  nc 34821318
                                 jump  lt -34821318
             jump  c -34821318
-jump  v -34821318
+jump  sle -34821318
 
 
 or     r0 r0
@@ -84,4 +84,4 @@ xor   r0 r0 10000
 xor   r0 r0 1023011123000
 
 test:
-	call test 
+	call test

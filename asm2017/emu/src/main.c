@@ -18,7 +18,9 @@
 
 /* I wished to have limited the use of SDL to graphical.h, but I need it here
    to map some keyboard keys to Chip8's 16 keys */
+#ifndef NO_SDL
 #include <SDL2/SDL.h>
+#endif
 
 //---
 //	Command-line parsing
@@ -280,6 +282,7 @@ const char *help_string =
 /* Emulated memory and CPU */
 static memory_t *mem	= NULL;
 static cpu_t *cpu	= NULL;
+
 /* PID of the main thread - this variable is also used by graphical.c */
 pid_t main_thread	= 0;
 
@@ -379,6 +382,7 @@ void sigh_close(__attribute__((unused)) int sigusr2)
 	only thread that accesses the timer counters in write mode, and it must
 	do it atomically, to prevent data races.
 */
+#ifndef NO_SDL
 void chip8(const uint8_t *keyboard, void *arg)
 {
 	cpu_t *cpu = arg;
@@ -421,6 +425,7 @@ void chip8(const uint8_t *keyboard, void *arg)
 
 	memory_write(cpu->mem, keybuffer, state, 16);
 }
+#endif
 
 /*
 	print_basic_stats() -- prints stats for the second benchmark
@@ -602,6 +607,12 @@ int main(int argc, char **argv)
 
 	/* It's show time! */
 
+	#ifdef NO_SDL
+	if(opt.graphical)
+	{
+		fatal("-g is not supported in NO_SDL builds");
+	}
+	#else
 	if(opt.graphical)
 	{
 		void *vram = (void *)mem->mem + (mem->vram >> 3);
@@ -611,6 +622,7 @@ int main(int argc, char **argv)
 			: graphical_start(64, 32, vram, chip8, cpu, scale);
 		if(result) return 1;
 	}
+	#endif
 
 	if(!opt.debugger)
 	{
@@ -627,6 +639,7 @@ int main(int argc, char **argv)
 		   window open until the user closes it.
 		   Do it only if the windows has not already been closed by the
 		   user (which would result in cpu->s = 1) */
+		#ifndef NO_SDL
 		if(opt.graphical && !cpu->s)
 		{
 			graphical_freeze();
@@ -634,6 +647,7 @@ int main(int argc, char **argv)
 				"graphical window.");
 			graphical_wait();
 		}
+		#endif
 	}
 	else
 	{
@@ -641,7 +655,9 @@ int main(int argc, char **argv)
 
 		/* By contrast, the debugger mode can only end when the user
 		   explicitly requires it, so close the window immediately */
+		#ifndef NO_SDL
 		graphical_stop();
+		#endif
 	}
 
 	if(opt.stats) print_stats(opt.stats_tex);

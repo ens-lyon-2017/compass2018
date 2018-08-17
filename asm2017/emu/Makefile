@@ -12,13 +12,20 @@ obj	= $(src:src/%=build/%.o)
 # _DEFAULT_SOURCE is for endian.h
 cflags	= -Wall -Wextra -std=c11 -I include -D_DEFAULT_SOURCE -O0 -g
 dflags	= -MT $@ -MMD -MP -MF $(@:.o=.d)
-lflags	= $(cflags) -lncurses -lSDL2
+lflags	= $(cflags) -lncurses
 
 # On some platforms where binutils does not automatically link in libtinfo as a
 # dependency to ncurses, it may be required to link it manually.
 # On some others, the libtinfo doesn't exist. Hence this switch.
 ifdef USE_LIBTINFO
 lflags += -ltinfo
+endif
+
+# Disable SDL-related functionalities and link without SDL.
+ifdef NO_SDL
+cflags += -D NO_SDL
+else
+lflags += -lSDL2
 endif
 
 $(target): $(obj)

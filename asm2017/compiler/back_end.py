@@ -83,14 +83,14 @@ class CleartextBitcodeBackEnd(BackEnd):
         "right": "1"}
 
     conditions = {
-        "eq": "000",
+        "eq":  "000",
         "neq": "001",
         "sgt": "010",
         "slt": "011",
-        "gt": "100",
-        "ge": "101",
-        "lt": "110",
-        "v":  "111"}
+        "sge": "100",
+        "ge":  "101",
+        "lt":  "110",
+        "sle": "111"}
 
     formats = {
         "char":     "0000",
