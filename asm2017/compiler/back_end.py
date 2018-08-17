@@ -111,6 +111,9 @@ class CleartextBitcodeBackEnd(BackEnd):
             n = typed_args[0].raw_value
             s = typed_args[1].raw_value
 
+            if len(s) < n:
+                s += "0" * (n - len(s))
+
             self.out_queue.push(s)
             return None
 

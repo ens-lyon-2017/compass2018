@@ -76,7 +76,7 @@ void memory_load_program(memory_t *mem, const char *filename)
 	/* Check that it fits into memory */
 	if(8 * size > mem->text)
 	{
-		error("program is too large to fit in the code/stack segment "
+		error("program is too large to fit in the code segment "
 			"(%d > %d)", 8 * size, mem->text);
 		note("you may want to change the memory geometry by using "
 			"--geometry");
