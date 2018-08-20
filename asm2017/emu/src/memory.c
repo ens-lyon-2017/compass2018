@@ -124,7 +124,7 @@ void memory_load_text(memory_t *mem, const char *filename)
 	while(!feof(fp))
 	{
 		size_t x = fread(buffer, 1, 256, fp);
-		if(!x)
+		if(ferror(fp))
 		{
 			error("# cannot read from '%s'", filename);
 			break;
@@ -206,9 +206,9 @@ int memory_load_file(memory_t *mem, uint64_t address, const char *filename)
 	}
 
 	int x = fread((void *)mem->mem + (address >> 3), size, 1, fp);
-	fclose(fp);
-
 	if(!x) error("# cannot read from '%s'", filename);
+
+	fclose(fp);
 	return !x;
 }
 
