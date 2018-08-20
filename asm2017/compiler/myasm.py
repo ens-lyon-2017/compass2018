@@ -60,7 +60,7 @@ conditions = {
     "sgt":  Condition("010"),
     "slt":  Condition("011"),
     "sge":  Condition("100"),
-    "sle":  Condition("101"),
+    "sle":  Condition("111"),
     "lt":   Condition("110"),
     "c":    Condition("110"),
     "v":    Condition("111")}
@@ -428,6 +428,8 @@ def asm_doc(s):
 
 
 if __name__ == '__main__':
+    print("Warning: this is an obsolete and badly tested assembler.")
+    print("Warning: please use ../asm.py instead.")
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('filename', action='store',
