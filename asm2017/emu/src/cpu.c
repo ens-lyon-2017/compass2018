@@ -568,6 +568,7 @@ static void print_common(cpu_t *cpu, uint fmt, uint64_t val)
 		val += 8;
 		print("%c", byte);
 	}
+	print("\n"); // todo verify if it is the expected behavior for chars
 }
 
 static void print(cpu_t *cpu)
