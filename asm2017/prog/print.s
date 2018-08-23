@@ -17,5 +17,5 @@ lea r6 stack
 	print signed r2		; n'imprime pas.
 ;;postlude
 stackend:
-.const 42422 #0
+.const 4242 #0
 stack:
