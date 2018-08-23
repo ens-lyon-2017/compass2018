@@ -20,9 +20,10 @@ memory_t *memory_new(uint64_t text, uint64_t stack, uint64_t data,
 	if((text & 63) || (stack & 63) || (data & 63) || (vram & 63))
 		fatal("all segment sizes ought to be multiples of 64");
 	if(text + stack + data != 0x10000)
-		warn("chosen vram location is incompatible with the standard");
+		warn("chosen vram location is incompatible with the standard.\n"
+		     "    text + stack + data should be 64k.");
 	if(vram < 0x50000)
-		warn("vram is too small for the standard");
+		warn("vram is too small for the standard. Minimum is 320k.");
 
 	uint64_t memsize = text + stack + data + vram;
 
