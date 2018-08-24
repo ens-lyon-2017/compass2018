@@ -289,7 +289,7 @@ static void jumpif(cpu_t *cpu)
 {
 	int z = cpu->z, n = cpu->n, v = cpu->v, c = cpu->c;
 	int conds[] = {
-		z, !z, !z && (n == v), n ^ v, n = v, !c, c, z || (n ^ v),
+		z, !z, !z && (n == v), n ^ v, n == v, !c, c, z || (n ^ v),
 	};
 	uint cnd = get(cond);
 	int64_t diff = get(addr, NULL);
