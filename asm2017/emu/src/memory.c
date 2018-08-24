@@ -20,9 +20,10 @@ memory_t *memory_new(uint64_t text, uint64_t stack, uint64_t data,
 	if((text & 63) || (stack & 63) || (data & 63) || (vram & 63))
 		fatal("all segment sizes ought to be multiples of 64");
 	if(text + stack + data != 0x10000)
-		warn("chosen vram location is incompatible with the standard");
+		warn("chosen vram location is incompatible with the standard.\n"
+		     "    text + stack + data should be 64k.");
 	if(vram < 0x50000)
-		warn("vram is too small for the standard");
+		warn("vram is too small for the standard. Minimum is 320k.");
 
 	uint64_t memsize = text + stack + data + vram;
 
@@ -124,7 +125,7 @@ void memory_load_text(memory_t *mem, const char *filename)
 	while(!feof(fp))
 	{
 		size_t x = fread(buffer, 1, 256, fp);
-		if(!x)
+		if(ferror(fp))
 		{
 			error("# cannot read from '%s'", filename);
 			break;
@@ -206,9 +207,9 @@ int memory_load_file(memory_t *mem, uint64_t address, const char *filename)
 	}
 
 	int x = fread((void *)mem->mem + (address >> 3), size, 1, fp);
-	fclose(fp);
-
 	if(!x) error("# cannot read from '%s'", filename);
+
+	fclose(fp);
 	return !x;
 }
 
