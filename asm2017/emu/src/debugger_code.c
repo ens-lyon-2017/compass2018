@@ -57,9 +57,11 @@ static void debugger_arg(uint64_t *ptr, arg_t type)
 	   instruction's nature */
 
 	/* Names for pointer and condition arguments */
-	const char *ptr_names[4] = { "pc", "sp", "a0", "a1" };
+	const char *ptr_names[4] = {
+		"pc", "sp", "a0", "a1"
+	};
 	const char *cnd_names[8] = {
-		"z", "nz", "sgt", "slt", "gt", "nc", "c", "v"
+		"z", "nz", "sgt", "slt", "sge", "nc", "c", "sle"
 	};
 	const char *fmt_names[16] = {
 		"char", "signed", "unsigned", "string",
