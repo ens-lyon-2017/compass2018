@@ -44,7 +44,7 @@ void error_msg(error_t level, const char *format, ...)
 
 	/* If requested, call strerror() for more detail */
 	if(call_strerror) fputs(": ", stderr), fputs(strerror(e), stderr);
-	putchar('\n');
+	fprintf(stderr, "\n");
 
 	/* Set the error flag or leave when required */
 	if(level >= error_error) error_flag = 1;
