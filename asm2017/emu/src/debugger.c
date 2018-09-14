@@ -436,7 +436,8 @@ void debugger(const char *filename, cpu_t *cpu)
 		while((argv[argc] = strtok(NULL, " \t"))) argc++;
 
 		/* Call the associated function */
-		if(!strcmp(argv[0], "help")) cmd_help(argc, argv);
+		if(!strcmp(argv[0], "help") || !strcmp(argv[0], "h"))
+			cmd_help(argc, argv);
 		else if(!strcmp(argv[0], "q")) break;
 		else if(!strcmp(argv[0], "s")) cmd_step(argc, argv);
 		else if(!strcmp(argv[0], "r")) cmd_run();
